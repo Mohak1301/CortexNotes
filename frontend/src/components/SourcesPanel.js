@@ -1,9 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getApiUrl, API_ENDPOINTS } from '../config/api.js';
+import toast from 'react-hot-toast';
 
 const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
-  const { getAuthHeaders } = useAuth();
+  const { getAuthHeaders, refreshAccessToken } = useAuth();
   const fileInputRef = useRef(null);
   const [showTextModal, setShowTextModal] = useState(false);
   const [textContent, setTextContent] = useState('');
@@ -61,20 +62,46 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
         body: JSON.stringify({ text: textContent }),
       });
       
-      if (response.ok) {
+      // Handle session expiration
+      if (response.status === 401) {
+        try {
+          await refreshAccessToken();
+          // Retry the request with new token
+          const retryResponse = await fetch(getApiUrl(API_ENDPOINTS.TEXT_UPLOAD), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ text: textContent }),
+          });
+          
+          if (retryResponse.ok) {
+            const data = await retryResponse.json();
+            if (data.source) {
+              onFileUpload([data.source]);
+            }
+            setTextContent('');
+            setShowTextModal(false);
+            toast.success('Text uploaded successfully');
+          } else {
+            toast.error('Failed to upload text');
+          }
+        } catch (refreshError) {
+          toast.error('Session expired. Please log in again.');
+        }
+      } else if (response.ok) {
         const data = await response.json();
-        // Add the new source to the list
         if (data.source) {
           onFileUpload([data.source]);
         }
-        
         setTextContent('');
         setShowTextModal(false);
+        toast.success('Text uploaded successfully');
       } else {
-        console.error('Text upload failed');
+        const errorData = await response.json().catch(() => ({}));
+        toast.error(errorData.error || 'Failed to upload text');
       }
     } catch (error) {
       console.error('Text upload error:', error);
+      toast.error('Failed to upload text');
     } finally {
       setIsTextUploading(false);
     }
@@ -91,20 +118,46 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
         body: JSON.stringify({ link: urlContent }),
       });
       
-      if (response.ok) {
+      // Handle session expiration
+      if (response.status === 401) {
+        try {
+          await refreshAccessToken();
+          // Retry the request with new token
+          const retryResponse = await fetch(getApiUrl(API_ENDPOINTS.LINK_UPLOAD), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ link: urlContent }),
+          });
+          
+          if (retryResponse.ok) {
+            const data = await retryResponse.json();
+            if (data.source) {
+              onFileUpload([data.source]);
+            }
+            setUrlContent('');
+            setShowUrlModal(false);
+            toast.success('URL uploaded successfully');
+          } else {
+            toast.error('Failed to upload URL');
+          }
+        } catch (refreshError) {
+          toast.error('Session expired. Please log in again.');
+        }
+      } else if (response.ok) {
         const data = await response.json();
-        // Add the new source to the list
         if (data.source) {
           onFileUpload([data.source]);
         }
-        
         setUrlContent('');
         setShowUrlModal(false);
+        toast.success('URL uploaded successfully');
       } else {
-        console.error('URL upload failed');
+        const errorData = await response.json().catch(() => ({}));
+        toast.error(errorData.error || 'Failed to upload URL');
       }
     } catch (error) {
       console.error('URL upload error:', error);
+      toast.error('Failed to upload URL');
     } finally {
       setIsUrlUploading(false);
     }

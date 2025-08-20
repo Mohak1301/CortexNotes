@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import './Login.css';
 
 const Register = () => {
@@ -17,12 +18,16 @@ const Register = () => {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      const errorMessage = 'Passwords do not match';
+      setError(errorMessage);
+      toast.error(errorMessage);
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      const errorMessage = 'Password must be at least 6 characters long';
+      setError(errorMessage);
+      toast.error(errorMessage);
       return;
     }
 
@@ -31,9 +36,11 @@ const Register = () => {
     const result = await register(email, password);
     
     if (result.success) {
+      toast.success('Account created successfully!');
       navigate('/dashboard');
     } else {
       setError(result.error);
+      toast.error(result.error);
     }
     
     setLoading(false);

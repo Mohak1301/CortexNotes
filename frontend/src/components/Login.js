@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import './Login.css';
 
 const Login = () => {
@@ -20,13 +21,17 @@ const Login = () => {
       const result = await login(email, password);
       
       if (result.success) {
+        toast.success('Login successful!');
         navigate('/dashboard');
       } else {
         setError(result.error);
+        toast.error(result.error);
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError('An unexpected error occurred. Please try again.');
+      const errorMessage = 'An unexpected error occurred. Please try again.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
     
     setLoading(false);

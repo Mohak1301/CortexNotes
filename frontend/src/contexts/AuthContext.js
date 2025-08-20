@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getApiUrl, API_ENDPOINTS } from '../config/api.js';
+import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
@@ -150,7 +151,8 @@ export const AuthProvider = ({ children }) => {
 
       return data.accessToken;
     } catch (error) {
-      // If refresh fails, logout user
+      // If refresh fails, logout user and show session expired toast
+      toast.error('Session expired. Please log in again.');
       await logout();
       throw error;
     }
