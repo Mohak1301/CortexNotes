@@ -5,8 +5,6 @@ const ChatPanel = ({ messages, onSendMessage, isLoading, sourcesCount }) => {
   const textareaRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  console.log('ChatPanel rendering with messages:', messages.length, 'sourcesCount:', sourcesCount);
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };

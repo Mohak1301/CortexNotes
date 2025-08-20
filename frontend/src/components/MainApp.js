@@ -5,7 +5,7 @@ import SourcesPanel from './SourcesPanel';
 import ChatPanel from './ChatPanel';
 
 function MainApp() {
-  const { getAuthHeaders } = useAuth();
+  const { getAuthHeaders, user, updateUser } = useAuth();
   const [sources, setSources] = useState([]);
   const [messages, setMessages] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -37,7 +37,7 @@ function MainApp() {
             body: formData,
           });
           
-                    if (response.ok) {
+          if (response.ok) {
             const data = await response.json();
             // Add the new source to the list
             if (data.source) {
@@ -53,7 +53,7 @@ function MainApp() {
         }
       }
     }
-  }, []);
+  }, [getAuthHeaders]);
 
   const handleSendMessage = useCallback(async (message) => {
     if (!message.trim()) return;
@@ -84,6 +84,15 @@ function MainApp() {
           timestamp: new Date()
         };
         setMessages(prev => [...prev, assistantMessage]);
+        
+        // Update user's query count if provided in response
+        if (data.queryCount !== undefined && updateUser) {
+          updateUser({
+            ...user,
+            queryCount: data.queryCount,
+            queryLimit: data.queryLimit
+          });
+        }
       } else {
         console.error('Chat request failed');
       }
@@ -98,19 +107,14 @@ function MainApp() {
   useEffect(() => {
     const fetchSources = async () => {
       try {
-        console.log('Fetching sources from /api/sources...');
         const response = await fetch(getApiUrl(API_ENDPOINTS.SOURCES), {
           method: 'GET',
           headers: getAuthHeaders(),
         });
-
-        console.log('Sources response status:', response.status);
         
         if (response.ok) {
           const data = await response.json();
-          console.log('Sources response data:', data);
           setSources(data.sources || []);
-          console.log('Loaded sources from vector DB:', data.sources?.length || 0);
         } else {
           const errorData = await response.json();
           console.error('Failed to fetch sources:', errorData);
@@ -124,8 +128,6 @@ function MainApp() {
 
     fetchSources();
   }, [getAuthHeaders]);
-
-  console.log('MainApp rendering with sources:', sources.length, 'messages:', messages.length);
   
   return (
     <div className="main-app-container">
@@ -134,6 +136,18 @@ function MainApp() {
         onFileUpload={handleFileUpload}
         isLoading={isUploading || isLoadingSources}
       />
+      {isUploading && (
+        <div className="loading-overlay">
+          <div className="loading">
+            <span>Uploading and processing file...</span>
+            <div className="loading-dots">
+              <div className="loading-dot"></div>
+              <div className="loading-dot"></div>
+              <div className="loading-dot"></div>
+            </div>
+          </div>
+        </div>
+      )}
       <ChatPanel 
         messages={messages}
         onSendMessage={handleSendMessage}

@@ -10,7 +10,7 @@ router.use(authMiddleware);
 // Get all sources for the authenticated user
 router.get('/', getUserSources);
 
-// Test endpoint to check all documents (for debugging)
+
 router.get('/test', getAllDocuments);
 
 export default router;

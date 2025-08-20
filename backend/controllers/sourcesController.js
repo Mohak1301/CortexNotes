@@ -3,13 +3,9 @@ import Source from '../models/Source.js';
 // Get user sources from database
 export const getUserSources = async (req, res) => {
   try {
-    console.log(`Fetching sources for user: ${req.user._id}`);
-    
     const sources = await Source.find({ userId: req.user._id })
       .sort({ uploadedAt: -1 })
       .select('-__v');
-
-    console.log(`Found ${sources.length} sources for user ${req.user._id}:`, sources);
     
     res.json({ sources });
   } catch (error) {
@@ -18,10 +14,9 @@ export const getUserSources = async (req, res) => {
   }
 };
 
-// Test endpoint to check all documents in vector database
+
 export const getAllDocuments = async (req, res) => {
   try {
-    console.log('Testing vector database connection...');
     
     const embeddings = new OpenAIEmbeddings({
       model: 'text-embedding-3-small',
@@ -44,8 +39,6 @@ export const getAllDocuments = async (req, res) => {
       with_vector: false
     });
 
-    console.log(`Total documents in vector DB: ${points.points?.length || 0}`);
-    
     const allDocs = points.points?.map(point => ({
       id: point.id,
       payload: point.payload

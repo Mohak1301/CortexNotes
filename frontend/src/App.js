@@ -6,10 +6,9 @@ import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
+import './transitions.css';
 
 function App() {
-  console.log('App component rendered');
-  
   return (
     <AuthProvider>
       <Router>

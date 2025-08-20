@@ -11,8 +11,6 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  console.log('Login component rendered');
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -35,7 +33,7 @@ const Login = () => {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container page-transition">
       <div className="auth-card">
         <div className="auth-header">
           <h1>Welcome Back</h1>
