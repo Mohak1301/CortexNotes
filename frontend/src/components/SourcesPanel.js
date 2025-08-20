@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { getApiUrl, API_ENDPOINTS } from '../config/api.js';
 
 const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
   const { getAuthHeaders } = useAuth();
@@ -53,7 +54,7 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
     if (!textContent.trim()) return;
     
     try {
-      const response = await fetch('/api/text', {
+      const response = await fetch(getApiUrl(API_ENDPOINTS.TEXT_UPLOAD), {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ text: textContent }),
@@ -78,7 +79,7 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
     if (!urlContent.trim()) return;
     
     try {
-      const response = await fetch('/api/link', {
+      const response = await fetch(getApiUrl(API_ENDPOINTS.LINK_UPLOAD), {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ link: urlContent }),

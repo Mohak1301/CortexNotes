@@ -1,0 +1,11 @@
+FROM qdrant/qdrant:latest
+
+# Expose Qdrant ports
+EXPOSE 6333 6334
+
+# Set Qdrant configuration
+ENV QDRANT__SERVICE__HTTP_PORT=6333
+ENV QDRANT__SERVICE__GRPC_PORT=6334
+
+# Start Qdrant
+CMD ["qdrant"]
