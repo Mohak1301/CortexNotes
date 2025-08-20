@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import toast from 'react-hot-toast';
 import MainApp from './MainApp';
 import './Dashboard.css';
 
@@ -24,6 +25,7 @@ const Dashboard = () => {
 
   const handleLogout = async () => {
     await logout();
+    toast.success('Logged out successfully');
   };
 
   return (

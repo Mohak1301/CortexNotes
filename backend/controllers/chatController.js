@@ -41,10 +41,10 @@ export const chat = async (req, res) => {
   });
 
   // Get all relevant chunks first
-  const allRelevantChunks = await vectorSearcher.invoke(message);
+  let  allRelevantChunks = await vectorSearcher.invoke(message);
   
   // Filter chunks by user ID to ensure users only see their own documents
-  const relevantChunk = allRelevantChunks.filter(chunk => 
+  let relevantChunk = allRelevantChunks.filter(chunk => 
     chunk.metadata && chunk.metadata.userId === req.user._id.toString()
   );
 

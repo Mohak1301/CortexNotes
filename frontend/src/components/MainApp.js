@@ -1,11 +1,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getApiUrl, API_ENDPOINTS } from '../config/api.js';
+import { apiFetch, handleApiResponse } from '../utils/apiUtils.js';
+import toast from 'react-hot-toast';
 import SourcesPanel from './SourcesPanel';
 import ChatPanel from './ChatPanel';
 
 function MainApp() {
-  const { getAuthHeaders, user, updateUser } = useAuth();
+  const { getAuthHeaders, user, updateUser, refreshAccessToken } = useAuth();
   const [sources, setSources] = useState([]);
   const [messages, setMessages] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -75,7 +77,41 @@ function MainApp() {
         body: JSON.stringify({ message }),
       });
 
-      if (response.ok) {
+      // Handle session expiration
+      if (response.status === 401) {
+        try {
+          await refreshAccessToken();
+          // Retry the request with new token
+          const retryResponse = await fetch(getApiUrl(API_ENDPOINTS.CHAT), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ message }),
+          });
+          
+          if (retryResponse.ok) {
+            const data = await retryResponse.json();
+            const assistantMessage = {
+              id: Date.now() + 1,
+              type: 'assistant',
+              content: data.reply,
+              timestamp: new Date()
+            };
+            setMessages(prev => [...prev, assistantMessage]);
+            
+            if (data.queryCount !== undefined && updateUser) {
+              updateUser({
+                ...user,
+                queryCount: data.queryCount,
+                queryLimit: data.queryLimit
+              });
+            }
+          } else {
+            toast.error('Failed to send message. Please try again.');
+          }
+        } catch (refreshError) {
+          toast.error('Session expired. Please log in again.');
+        }
+      } else if (response.ok) {
         const data = await response.json();
         const assistantMessage = {
           id: Date.now() + 1,
@@ -85,7 +121,6 @@ function MainApp() {
         };
         setMessages(prev => [...prev, assistantMessage]);
         
-        // Update user's query count if provided in response
         if (data.queryCount !== undefined && updateUser) {
           updateUser({
             ...user,
@@ -94,14 +129,16 @@ function MainApp() {
           });
         }
       } else {
-        console.error('Chat request failed');
+        const errorData = await response.json().catch(() => ({}));
+        toast.error(errorData.error || 'Failed to send message');
       }
     } catch (error) {
       console.error('Chat error:', error);
+      toast.error('Failed to send message. Please try again.');
     } finally {
       setIsChatLoading(false);
     }
-  }, []);
+  }, [getAuthHeaders, refreshAccessToken, updateUser, user]);
 
   // Fetch user sources on component mount
   useEffect(() => {
@@ -112,22 +149,42 @@ function MainApp() {
           headers: getAuthHeaders(),
         });
         
-        if (response.ok) {
+        // Handle session expiration
+        if (response.status === 401) {
+          try {
+            await refreshAccessToken();
+            // Retry the request with new token
+            const retryResponse = await fetch(getApiUrl(API_ENDPOINTS.SOURCES), {
+              method: 'GET',
+              headers: getAuthHeaders(),
+            });
+            
+            if (retryResponse.ok) {
+              const data = await retryResponse.json();
+              setSources(data.sources || []);
+            } else {
+              toast.error('Failed to load sources');
+            }
+          } catch (refreshError) {
+            toast.error('Session expired. Please log in again.');
+          }
+        } else if (response.ok) {
           const data = await response.json();
           setSources(data.sources || []);
         } else {
           const errorData = await response.json();
-          console.error('Failed to fetch sources:', errorData);
+          toast.error('Failed to load sources');
         }
       } catch (error) {
         console.error('Error fetching sources:', error);
+        toast.error('Failed to load sources');
       } finally {
         setIsLoadingSources(false);
       }
     };
 
     fetchSources();
-  }, [getAuthHeaders]);
+  }, [getAuthHeaders, refreshAccessToken]);
   
   return (
     <div className="main-app-container">
