@@ -1,0 +1,157 @@
+import React, { useState, useCallback, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import SourcesPanel from './SourcesPanel';
+import ChatPanel from './ChatPanel';
+
+function MainApp() {
+  const { getAuthHeaders } = useAuth();
+  const [sources, setSources] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [isLoadingSources, setIsLoadingSources] = useState(true);
+
+  const handleFileUpload = useCallback(async (files) => {
+    // Handle direct source objects (for text/url)
+    if (Array.isArray(files) && files[0] && typeof files[0] === 'object' && files[0].id) {
+      setSources(prev => [...prev, ...files]);
+      return;
+    }
+
+    // Handle file uploads (PDF)
+    const formData = new FormData();
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.type === 'application/pdf') {
+        formData.append('pdf', file);
+        
+        try {
+          setIsUploading(true);
+          const response = await fetch('/api/pdfupload', {
+            method: 'POST',
+            headers: {
+              'Authorization': getAuthHeaders().Authorization,
+            },
+            body: formData,
+          });
+          
+                    if (response.ok) {
+            const data = await response.json();
+            // Add the new source to the list
+            if (data.source) {
+              setSources(prev => [...prev, data.source]);
+            }
+          } else {
+            console.error('Upload failed');
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
+        } finally {
+          setIsUploading(false);
+        }
+      }
+    }
+  }, []);
+
+  const handleSendMessage = useCallback(async (message) => {
+    if (!message.trim()) return;
+
+    const userMessage = {
+      id: Date.now(),
+      type: 'user',
+      content: message,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsChatLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ message }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const assistantMessage = {
+          id: Date.now() + 1,
+          type: 'assistant',
+          content: data.reply,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+      } else {
+        console.error('Chat request failed');
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+    } finally {
+      setIsChatLoading(false);
+    }
+  }, []);
+
+  // Fetch user sources on component mount
+  useEffect(() => {
+    const fetchSources = async () => {
+      try {
+        console.log('Fetching sources from /api/sources...');
+        const response = await fetch('/api/sources', {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        });
+
+        console.log('Sources response status:', response.status);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Sources response data:', data);
+          setSources(data.sources || []);
+          console.log('Loaded sources from vector DB:', data.sources?.length || 0);
+        } else {
+          const errorData = await response.json();
+          console.error('Failed to fetch sources:', errorData);
+        }
+      } catch (error) {
+        console.error('Error fetching sources:', error);
+      } finally {
+        setIsLoadingSources(false);
+      }
+    };
+
+    fetchSources();
+  }, [getAuthHeaders]);
+
+  console.log('MainApp rendering with sources:', sources.length, 'messages:', messages.length);
+  
+  return (
+    <div className="main-app-container">
+      <SourcesPanel 
+        sources={sources}
+        onFileUpload={handleFileUpload}
+        isLoading={isUploading || isLoadingSources}
+      />
+      <ChatPanel 
+        messages={messages}
+        onSendMessage={handleSendMessage}
+        isLoading={isChatLoading}
+        sourcesCount={sources.length}
+      />
+      {/* Fallback in case components don't load */}
+      <div style={{ 
+        position: 'absolute', 
+        top: '50%', 
+        left: '50%', 
+        transform: 'translate(-50%, -50%)', 
+        color: 'white',
+        display: 'none' // Hidden by default
+      }}>
+        Loading components...
+      </div>
+    </div>
+  );
+}
+
+export default MainApp;
