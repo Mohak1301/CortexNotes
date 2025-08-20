@@ -4,7 +4,7 @@ services:
     name: cortexnotes-qdrant
     env: docker
     plan: free
-    dockerfilePath: ./backend/Dockerfile.qdrant
+    image: qdrant/qdrant:latest
     envVars:
       - key: QDRANT__SERVICE__HTTP_PORT
         value: 6333
