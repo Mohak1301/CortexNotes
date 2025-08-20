@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getApiUrl, API_ENDPOINTS } from '../config/api.js';
 
 const AuthContext = createContext();
 
@@ -35,7 +36,7 @@ export const AuthProvider = ({ children }) => {
   // Register function
   const register = async (email, password) => {
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(getApiUrl(API_ENDPOINTS.REGISTER), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -67,7 +68,7 @@ export const AuthProvider = ({ children }) => {
   // Login function
   const login = async (email, password) => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(getApiUrl(API_ENDPOINTS.LOGIN), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -100,7 +101,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       if (refreshToken) {
-        await fetch('/api/auth/logout', {
+        await fetch(getApiUrl(API_ENDPOINTS.LOGOUT), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -126,7 +127,7 @@ export const AuthProvider = ({ children }) => {
   // Refresh token function
   const refreshAccessToken = async () => {
     try {
-      const response = await fetch('/api/auth/refresh', {
+      const response = await fetch(getApiUrl(API_ENDPOINTS.REFRESH), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

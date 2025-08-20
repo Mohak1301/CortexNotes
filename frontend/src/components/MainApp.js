@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { getApiUrl, API_ENDPOINTS } from '../config/api.js';
 import SourcesPanel from './SourcesPanel';
 import ChatPanel from './ChatPanel';
 
@@ -28,7 +29,7 @@ function MainApp() {
         
         try {
           setIsUploading(true);
-          const response = await fetch('/api/pdfupload', {
+          const response = await fetch(getApiUrl(API_ENDPOINTS.PDF_UPLOAD), {
             method: 'POST',
             headers: {
               'Authorization': getAuthHeaders().Authorization,
@@ -68,7 +69,7 @@ function MainApp() {
     setIsChatLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(getApiUrl(API_ENDPOINTS.CHAT), {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ message }),
@@ -98,7 +99,7 @@ function MainApp() {
     const fetchSources = async () => {
       try {
         console.log('Fetching sources from /api/sources...');
-        const response = await fetch('/api/sources', {
+        const response = await fetch(getApiUrl(API_ENDPOINTS.SOURCES), {
           method: 'GET',
           headers: getAuthHeaders(),
         });

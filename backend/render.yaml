@@ -1,0 +1,37 @@
+services:
+  # Qdrant Vector Database (Docker)
+  - type: web
+    name: cortexnotes-qdrant
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.qdrant
+    envVars:
+      - key: QDRANT__SERVICE__HTTP_PORT
+        value: 6333
+      - key: QDRANT__SERVICE__GRPC_PORT
+        value: 6334
+
+  # Backend API Service
+  - type: web
+    name: cortexnotes-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: QDRANT_URL
+        value: https://cortexnotes-qdrant.onrender.com
