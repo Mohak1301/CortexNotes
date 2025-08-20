@@ -39,7 +39,7 @@ export const pdfloader = async (pdfBuffer, originalFilename, userId) => {
     });
 
     const vectorStore = await QdrantVectorStore.fromDocuments(docs, embeddings, {
-      url: 'http://localhost:6333',
+      url: process.env.QDRANT_URL || 'http://localhost:6333',
       collectionName: 'chaicode-collection',
     });
 
@@ -86,7 +86,7 @@ export const textloader = async (text, userId) => {
   });
 
   const vectorStore = await QdrantVectorStore.fromDocuments(docs, embeddings, {
-    url: 'http://localhost:6333',
+    url: process.env.QDRANT_URL || 'http://localhost:6333',
     collectionName: 'chaicode-collection',
   });
   console.log('Indexing of documents done...');
@@ -123,7 +123,7 @@ export const urlloader = async (link, userId) => {
       });
 
       const vectorStore = await QdrantVectorStore.fromDocuments(docs, embeddings, {
-        url: 'http://localhost:6333',
+        url: process.env.QDRANT_URL || 'http://localhost:6333',
         collectionName: 'chaicode-collection',
       }
       )
