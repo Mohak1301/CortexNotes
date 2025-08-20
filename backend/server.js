@@ -18,7 +18,7 @@ app.use(helmet());
 
 // CORS configuration
 app.use(cors({
-  origin: 'http://localhost:3000', // Update with your frontend URL
+  origin: 'https://cortex-notes-delta.vercel.app', 
   credentials: true
 }));
 
