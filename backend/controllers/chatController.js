@@ -336,7 +336,14 @@ export const chat = async (req, res) => {
 
     const assistantReply = completion.choices[0].message.content;
 
-    res.json({ reply: assistantReply });
+    // Increment query count after successful chat
+    await req.user.incrementQueryCount();
+
+    res.json({ 
+      reply: assistantReply,
+      queryCount: req.user.queryCount,
+      queryLimit: req.user.queryLimit
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

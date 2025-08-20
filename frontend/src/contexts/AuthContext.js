@@ -17,8 +17,6 @@ export const AuthProvider = ({ children }) => {
   const [refreshToken, setRefreshToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  console.log('AuthProvider rendered, loading:', loading, 'user:', user);
-
   // Check for existing tokens on app load
   useEffect(() => {
     const storedAccessToken = localStorage.getItem('accessToken');
@@ -166,6 +164,12 @@ export const AuthProvider = ({ children }) => {
     };
   };
 
+  // Update user data
+  const updateUser = (newUserData) => {
+    setUser(newUserData);
+    localStorage.setItem('user', JSON.stringify(newUserData));
+  };
+
   const value = {
     user,
     accessToken,
@@ -175,6 +179,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     refreshAccessToken,
     getAuthHeaders,
+    updateUser,
   };
 
   return (

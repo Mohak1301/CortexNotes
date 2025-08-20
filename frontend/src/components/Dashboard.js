@@ -27,7 +27,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="dashboard">
+    <div className="dashboard page-transition">
       <header className="dashboard-header">
         <div className="dashboard-header-content">
           <div className="dashboard-title">

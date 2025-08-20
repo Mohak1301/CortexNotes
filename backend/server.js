@@ -26,14 +26,14 @@ app.use(express.json());
 
 // MongoDB connection
 const mongoURI = process.env.MONGODB_URI;
-console.log('Connecting to MongoDB with URI:', mongoURI.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')); // Log URI without credentials
+
 
 mongoose.connect(mongoURI, {// Explicitly specify database name
   retryWrites: true,
   w: 'majority'
 })
   .then(() => {
-    console.log('✅ Connected to MongoDB Atlas');
+    // Connected to MongoDB Atlas
   })
   .catch(err => {
     console.error('❌ MongoDB connection error:', err);
@@ -47,4 +47,6 @@ app.use("/api/sources", sourcesRoutes);
 
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  // Server running on port ${PORT}
+});

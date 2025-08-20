@@ -9,8 +9,8 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
   const [textContent, setTextContent] = useState('');
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [urlContent, setUrlContent] = useState('');
-
-  console.log('SourcesPanel rendering with sources:', sources.length, 'isLoading:', isLoading);
+  const [isTextUploading, setIsTextUploading] = useState(false);
+  const [isUrlUploading, setIsUrlUploading] = useState(false);
 
   const handleFileClick = () => {
     fileInputRef.current?.click();
@@ -54,6 +54,7 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
     if (!textContent.trim()) return;
     
     try {
+      setIsTextUploading(true);
       const response = await fetch(getApiUrl(API_ENDPOINTS.TEXT_UPLOAD), {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -69,9 +70,13 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
         
         setTextContent('');
         setShowTextModal(false);
+      } else {
+        console.error('Text upload failed');
       }
     } catch (error) {
       console.error('Text upload error:', error);
+    } finally {
+      setIsTextUploading(false);
     }
   };
 
@@ -79,6 +84,7 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
     if (!urlContent.trim()) return;
     
     try {
+      setIsUrlUploading(true);
       const response = await fetch(getApiUrl(API_ENDPOINTS.LINK_UPLOAD), {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -94,9 +100,13 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
         
         setUrlContent('');
         setShowUrlModal(false);
+      } else {
+        console.error('URL upload failed');
       }
     } catch (error) {
       console.error('URL upload error:', error);
+    } finally {
+      setIsUrlUploading(false);
     }
   };
 
@@ -270,9 +280,16 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
               <button 
                 className="btn btn-primary"
                 onClick={handleTextSubmit}
-                disabled={!textContent.trim()}
+                disabled={!textContent.trim() || isTextUploading}
               >
-                Submit Text
+                {isTextUploading ? (
+                  <>
+                    <div className="loading-spinner"></div>
+                    Processing...
+                  </>
+                ) : (
+                  'Submit Text'
+                )}
               </button>
             </div>
           </div>
@@ -314,9 +331,16 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
               <button 
                 className="btn btn-primary"
                 onClick={handleUrlSubmit}
-                disabled={!urlContent.trim()}
+                disabled={!urlContent.trim() || isUrlUploading}
               >
-                Submit URL
+                {isUrlUploading ? (
+                  <>
+                    <div className="loading-spinner"></div>
+                    Processing...
+                  </>
+                ) : (
+                  'Submit URL'
+                )}
               </button>
             </div>
           </div>

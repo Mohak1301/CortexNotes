@@ -43,7 +43,7 @@ export const pdfloader = async (pdfBuffer, originalFilename, userId) => {
       collectionName: 'chaicode-collection',
     });
 
-    console.log('Indexing of documents done...');
+
     
   } catch (error) {
     console.error("PDF processing error:", error);
@@ -53,7 +53,7 @@ export const pdfloader = async (pdfBuffer, originalFilename, userId) => {
     if (tempFilePath && fs.existsSync(tempFilePath)) {
       try {
         fs.unlinkSync(tempFilePath);
-        console.log('Temporary file cleaned up');
+
       } catch (cleanupError) {
         console.warn('Failed to clean up temporary file:', cleanupError.message);
       }
@@ -89,7 +89,7 @@ export const textloader = async (text, userId) => {
     url: process.env.QDRANT_URL || 'http://localhost:6333',
     collectionName: 'chaicode-collection',
   });
-  console.log('Indexing of documents done...');
+
 }
 catch(error){
   console.error("Text processing error:", error);
@@ -116,7 +116,7 @@ export const urlloader = async (link, userId) => {
         };
       });
 
-      console.log(docs)
+
 
       const embeddings = new OpenAIEmbeddings({
         model: 'text-embedding-3-small',
@@ -127,6 +127,6 @@ export const urlloader = async (link, userId) => {
         collectionName: 'chaicode-collection',
       }
       )
-  console.log('Indexing of documents done...')
+
 
 }
