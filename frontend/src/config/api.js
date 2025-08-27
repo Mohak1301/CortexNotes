@@ -1,11 +1,19 @@
 // API Configuration
-// Using Vercel rewrites, so always use relative URLs
+// Handle both development and production environments
 export const getApiUrl = (endpoint) => {
   // Remove leading slash if present
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   
-  // Always use relative URL - Vercel rewrite will handle routing to backend
-  return `/${cleanEndpoint}`;
+  // Check if we're in development mode
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  if (isDevelopment) {
+    // In development, call the backend directly
+    return `http://localhost:5000/${cleanEndpoint}`;
+  } else {
+    // In production, use relative URL - Vercel rewrite will handle routing to backend
+    return `/${cleanEndpoint}`;
+  }
 };
 
 // API endpoints

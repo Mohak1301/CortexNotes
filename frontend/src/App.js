@@ -1,6 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
 import './App.css';
 import './transitions.css';
@@ -10,9 +11,9 @@ function App() {
     <Router>
       <div className="app">
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/test" element={<div style={{color: 'white', padding: '20px'}}>Test route working!</div>} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </div>
       <Toaster 
