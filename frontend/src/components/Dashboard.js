@@ -10,6 +10,7 @@ const Dashboard = () => {
   const [sources, setSources] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showMobileSourcesModal, setShowMobileSourcesModal] = useState(false);
   const [showSourcesPanel, setShowSourcesPanel] = useState(true);
 
   const MAX_DOCUMENTS = 4;
@@ -35,13 +36,22 @@ const Dashboard = () => {
     // Clear localStorage on page load to ensure fresh start
     localStorage.removeItem('cortexNotes_sources');
     setSources([]);
-    setShowSourcesPanel(true);
+    // Set initial panel state based on screen size
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      setShowSourcesPanel(true); // Show panel when no sources
+    } else {
+      setShowSourcesPanel(true); // Always show on desktop
+    }
   }, []);
 
-  // Hide sources panel whenever sources are added
+  // On desktop, always show sources panel. On mobile, hide it when sources are added
   useEffect(() => {
-    if (sources.length > 0) {
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile && sources.length > 0) {
       setShowSourcesPanel(false);
+    } else if (!isMobile) {
+      setShowSourcesPanel(true); // Always show on desktop
     }
   }, [sources.length]);
 
@@ -49,6 +59,25 @@ const Dashboard = () => {
   useEffect(() => {
     localStorage.setItem('cortexNotes_sources', JSON.stringify(sources));
   }, [sources]);
+
+  // Handle window resize for responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth <= 768;
+      if (!isMobile) {
+        // On desktop, always show sources panel
+        setShowSourcesPanel(true);
+      } else if (sources.length === 0) {
+        // On mobile with no sources, show panel
+        setShowSourcesPanel(true);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Call once on mount
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sources.length]);
 
   const handleFileUpload = useCallback(async (files) => {
     // Handle direct source objects (for text/url)
@@ -60,7 +89,11 @@ const Dashboard = () => {
         return;
       }
       setSources(prev => [...prev, ...files]);
-      setShowSourcesPanel(false); // Hide sources panel after upload
+      // Only hide panel on mobile after upload
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        setShowSourcesPanel(false);
+      }
       return;
     }
 
@@ -90,7 +123,11 @@ const Dashboard = () => {
             // Add the new source to the list
             if (data.source) {
               setSources(prev => [...prev, data.source]);
-              setShowSourcesPanel(false); // Hide sources panel after upload
+              // Only hide panel on mobile after upload
+              const isMobile = window.innerWidth <= 768;
+              if (isMobile) {
+                setShowSourcesPanel(false);
+              }
             }
           } else {
             console.error('Upload failed');
@@ -166,7 +203,14 @@ const Dashboard = () => {
             {sources.length > 0 && !showSourcesPanel && (
               <button 
                 className="navbar-toggle-btn"
-                onClick={() => setShowSourcesPanel(true)}
+                onClick={() => {
+                  const isMobile = window.innerWidth <= 768;
+                  if (isMobile) {
+                    setShowMobileSourcesModal(true);
+                  } else {
+                    setShowSourcesPanel(true);
+                  }
+                }}
                 title="Show Sources"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -226,6 +270,68 @@ const Dashboard = () => {
         currentCount={sources.length}
         isLimitReached={sources.length >= MAX_DOCUMENTS}
       />
+
+      {/* Mobile Sources Modal */}
+      {showMobileSourcesModal && (
+        <div className="mobile-modal-overlay" onClick={() => setShowMobileSourcesModal(false)}>
+          <div className="mobile-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-modal-header">
+              <h3>Your Sources</h3>
+              <button 
+                className="mobile-modal-close"
+                onClick={() => setShowMobileSourcesModal(false)}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="mobile-sources-list">
+              {sources.map((source) => (
+                <div key={source.id} className="mobile-source-item">
+                  <div className="mobile-source-info">
+                    <div className="mobile-source-name">{source.name}</div>
+                    <div className="mobile-source-type">{source.type}</div>
+                    <div className="mobile-source-date">
+                      {new Date(source.uploadedAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <button 
+                    className="mobile-source-delete"
+                    onClick={() => {
+                      handleSourceDeleted(source.id);
+                      setShowMobileSourcesModal(false);
+                    }}
+                    title="Delete source"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="mobile-modal-footer">
+              <button 
+                className="mobile-btn mobile-btn-secondary"
+                onClick={() => setShowMobileSourcesModal(false)}
+              >
+                Close
+              </button>
+              <button 
+                className="mobile-btn mobile-btn-primary"
+                onClick={() => {
+                  setShowMobileSourcesModal(false);
+                  setShowUploadModal(true);
+                }}
+                disabled={sources.length >= MAX_DOCUMENTS}
+              >
+                Add More Sources
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

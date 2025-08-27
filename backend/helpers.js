@@ -23,32 +23,28 @@ export const pdfloader = async (pdfBuffer, originalFilename, userId) => {
 
     const docs = await loader.load();
 
-    // Add user ID metadata to each document
-    docs.forEach(doc => {
-      doc.metadata = {
-        ...doc.metadata,
-        userId: userId,
-        documentType: 'pdf',
-        originalFilename: originalFilename,
-        uploadedAt: new Date().toISOString()
-      };
-    });
+      // Add user ID metadata to each document
+  docs.forEach(doc => {
+    doc.metadata = {
+      ...doc.metadata,
+      userId: userId,
+      documentType: 'pdf',
+      originalFilename: originalFilename,
+      uploadedAt: new Date().toISOString(),
+      sourceId: `pdf_${Date.now()}_${originalFilename}` // Add unique source ID
+    };
+  });
 
       const embeddings = new OpenAIEmbeddings({
     model: 'text-embedding-3-small',
   });
 
-  try {
     const vectorStore = await QdrantVectorStore.fromDocuments(docs, embeddings, {
       url: process.env.QDRANT_URL || 'http://localhost:6333',
       collectionName: process.env.QDRANT_COLLECTION_NAME || 'cortex-notes',
       apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
     });
     console.log('Vector store created successfully for PDF');
-  } catch (error) {
-    console.error('Vector store creation error for PDF:', error);
-    throw error;
-  }
 
     console.log(`PDF processed and ${docs.length} chunks added to vector database`);
     
@@ -84,7 +80,8 @@ export const textloader = async (text, userId) => {
       ...doc.metadata,
       userId: userId,
       documentType: 'text',
-      uploadedAt: new Date().toISOString()
+      uploadedAt: new Date().toISOString(),
+      sourceId: `text_${Date.now()}` // Add unique source ID
     };
   });
 
@@ -96,17 +93,11 @@ export const textloader = async (text, userId) => {
     model: 'text-embedding-3-small',
   });
 
-  try {
     const vectorStore = await QdrantVectorStore.fromDocuments(docs, embeddings, {
       url: process.env.QDRANT_URL || 'http://localhost:6333',
       collectionName: process.env.QDRANT_COLLECTION_NAME || 'cortex-notes',
       apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
     });
-    console.log('Vector store created successfully');
-  } catch (error) {
-    console.error('Vector store creation error:', error);
-    throw error;
-  }
 
   console.log(`Text processed and ${docs.length} chunks added to vector database`);
 
@@ -132,7 +123,8 @@ export const urlloader = async (link, userId) => {
           userId: userId,
           documentType: 'url',
           sourceUrl: link,
-          uploadedAt: new Date().toISOString()
+          uploadedAt: new Date().toISOString(),
+          sourceId: `url_${Date.now()}_${new URL(link).hostname}` // Add unique source ID
         };
       });
 
@@ -142,17 +134,11 @@ export const urlloader = async (link, userId) => {
         model: 'text-embedding-3-small',
       });
 
-      try {
         const vectorStore = await QdrantVectorStore.fromDocuments(docs, embeddings, {
           url: process.env.QDRANT_URL || 'http://localhost:6333',
           collectionName: process.env.QDRANT_COLLECTION_NAME || 'cortex-notes',
           apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
         });
-        console.log('Vector store created successfully for URL');
-      } catch (error) {
-        console.error('Vector store creation error for URL:', error);
-        throw error;
-      }
 
       console.log(`URL processed and ${docs.length} chunks added to vector database`);
 

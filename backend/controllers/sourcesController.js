@@ -6,8 +6,6 @@ export const deleteSource = async (req, res) => {
   try {
     const { sourceId } = req.params;
     
-    // For frontend-managed sources, we'll clear all vectors since we don't track individual source vectors
-    // This is a simplified approach - in production you might want to track vector IDs per source
     try {
       const embeddings = new OpenAIEmbeddings({
         model: 'text-embedding-3-small',
@@ -25,20 +23,29 @@ export const deleteSource = async (req, res) => {
       const client = vectorStore.client;
       const collectionName = process.env.QDRANT_COLLECTION_NAME || 'cortex-notes';
       
-      // Get all points and delete them (since we don't track individual source vectors)
+      // Get all points with payload to filter by sourceId
       const points = await client.scroll(collectionName, {
         limit: 10000,
-        with_payload: false,
+        with_payload: true,
         with_vector: false
       });
       
       if (points.points && points.points.length > 0) {
-        const pointIds = points.points.map(point => point.id);
-        await client.delete(collectionName, {
-          wait: true,
-          points: pointIds
-        });
-        console.log(`Deleted ${pointIds.length} vectors for source ${sourceId}`);
+        // Filter points that belong to the specific source
+        const sourcePoints = points.points.filter(point => 
+          point.payload && point.payload.sourceId === sourceId
+        );
+        
+        if (sourcePoints.length > 0) {
+          const pointIds = sourcePoints.map(point => point.id);
+          await client.delete(collectionName, {
+            wait: true,
+            points: pointIds
+          });
+          console.log(`Deleted ${pointIds.length} vectors for source ${sourceId}`);
+        } else {
+          console.log(`No vectors found for source ${sourceId}`);
+        }
       }
     } catch (vectorError) {
       console.error('Error deleting vectors:', vectorError);

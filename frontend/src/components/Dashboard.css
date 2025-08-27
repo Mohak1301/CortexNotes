@@ -41,7 +41,7 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  display: flex;
+  display: none; /* Hidden by default on desktop */
   align-items: center;
   gap: 8px;
   transition: var(--transition-smooth);
@@ -69,7 +69,7 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  display: flex;
+  display: none; /* Hidden by default on desktop */
   align-items: center;
   gap: 8px;
   transition: var(--transition-smooth);
