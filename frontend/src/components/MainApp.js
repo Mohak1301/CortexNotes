@@ -20,10 +20,10 @@ function MainApp({
   const [messages, setMessages] = useState([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
 
-  // Handle page refresh - clear vector DB
+  // Handle page refresh - clear vector DB and localStorage
   useEffect(() => {
     const handleBeforeUnload = () => {
-      // Use sendBeacon for more reliable cleanup on page unload
+      // Clear sources from backend on page refresh/close
       const cleanupData = JSON.stringify({ action: 'clear_all' });
       navigator.sendBeacon(getApiUrl(API_ENDPOINTS.CLEAR_ALL_SOURCES), cleanupData);
     };
