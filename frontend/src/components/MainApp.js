@@ -36,6 +36,13 @@ function MainApp({
     };
   }, []);
 
+  // Clear chat messages when sources are cleared
+  useEffect(() => {
+    if (sources.length === 0) {
+      setMessages([]);
+    }
+  }, [sources.length]);
+
   const handleSendMessage = useCallback(async (message) => {
     if (!message.trim()) return;
 
