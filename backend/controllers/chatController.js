@@ -16,14 +16,14 @@ export const chat = async (req, res) => {
     model: 'text-embedding-3-small',
   });
 
-  const vectorStore = await QdrantVectorStore.fromExistingCollection(
-    embeddings,
-    {
-      url: process.env.QDRANT_URL || 'http://localhost:6333',
-      collectionName: 'chaicode-collection',
-      apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
-    }
-  );
+      const vectorStore = await QdrantVectorStore.fromExistingCollection(
+      embeddings,
+      {
+        url: process.env.QDRANT_URL || 'http://localhost:6333',
+        collectionName: process.env.QDRANT_COLLECTION_NAME || 'cortex-notes',
+        apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
+      }
+    );
 
   const vectorSearcher = vectorStore.asRetriever({
     k: 3,

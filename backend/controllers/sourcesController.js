@@ -17,15 +17,16 @@ export const deleteSource = async (req, res) => {
         embeddings,
         {
           url: process.env.QDRANT_URL || 'http://localhost:6333',
-          collectionName: 'chaicode-collection',
+          collectionName: process.env.QDRANT_COLLECTION_NAME || 'cortex-notes',
           apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
         }
       );
 
       const client = vectorStore.client;
+      const collectionName = process.env.QDRANT_COLLECTION_NAME || 'cortex-notes';
       
       // Get all points and delete them (since we don't track individual source vectors)
-      const points = await client.scroll('chaicode-collection', {
+      const points = await client.scroll(collectionName, {
         limit: 10000,
         with_payload: false,
         with_vector: false
@@ -33,7 +34,7 @@ export const deleteSource = async (req, res) => {
       
       if (points.points && points.points.length > 0) {
         const pointIds = points.points.map(point => point.id);
-        await client.delete('chaicode-collection', {
+        await client.delete(collectionName, {
           wait: true,
           points: pointIds
         });
@@ -70,15 +71,16 @@ export const clearAllSources = async (req, res) => {
         embeddings,
         {
           url: process.env.QDRANT_URL || 'http://localhost:6333',
-          collectionName: 'chaicode-collection',
+          collectionName: process.env.QDRANT_COLLECTION_NAME || 'cortex-notes',
           apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
         }
       );
 
       const client = vectorStore.client;
+      const collectionName = process.env.QDRANT_COLLECTION_NAME || 'cortex-notes';
       
       // Get all points and delete them
-      const points = await client.scroll('chaicode-collection', {
+      const points = await client.scroll(collectionName, {
         limit: 10000,
         with_payload: false,
         with_vector: false
@@ -86,7 +88,7 @@ export const clearAllSources = async (req, res) => {
       
       if (points.points && points.points.length > 0) {
         const pointIds = points.points.map(point => point.id);
-        await client.delete('chaicode-collection', {
+        await client.delete(collectionName, {
           wait: true,
           points: pointIds
         });
