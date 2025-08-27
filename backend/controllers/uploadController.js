@@ -6,11 +6,12 @@ export const uploadPDF = async (req, res) => {
       return res.status(400).json({ error: "No PDF file uploaded" });
     }
 
+    const sourceId = `pdf_${Date.now()}_${req.file.originalname}`;
     await pdfloader(req.file.buffer, req.file.originalname, 'demo-user');
     
     // Return source data for frontend to store locally
     const source = {
-      id: Date.now(),
+      id: sourceId,
       name: req.file.originalname,
       type: 'PDF',
       size: req.file.size,
@@ -30,11 +31,12 @@ export const uploadPDF = async (req, res) => {
 export const uploadText = async (req, res) => {
   try {
     const { text } = req.body;
+    const sourceId = `text_${Date.now()}`;
     await textloader(text, 'demo-user');
     
     // Return source data for frontend to store locally
     const source = {
-      id: Date.now(),
+      id: sourceId,
       name: `Text Document ${new Date().toLocaleDateString()}`,
       type: 'TEXT',
       size: text.length,
@@ -53,11 +55,12 @@ export const uploadText = async (req, res) => {
 export const uploadLink = async (req, res) => {
   try {
     const { link } = req.body;
+    const sourceId = `url_${Date.now()}_${new URL(link).hostname}`;
     await urlloader(link, 'demo-user');
     
     // Return source data for frontend to store locally
     const source = {
-      id: Date.now(),
+      id: sourceId,
       name: `Website: ${new URL(link).hostname}`,
       type: 'URL',
       size: 0,

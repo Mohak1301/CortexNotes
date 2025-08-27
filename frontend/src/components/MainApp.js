@@ -28,19 +28,11 @@ function MainApp({
       navigator.sendBeacon(getApiUrl(API_ENDPOINTS.CLEAR_ALL_SOURCES), cleanupData);
     };
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        // Page is being hidden (refresh, close, navigate away)
-        handleBeforeUnload();
-      }
-    };
-
+    // Only trigger on actual page unload (refresh/close)
     window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
