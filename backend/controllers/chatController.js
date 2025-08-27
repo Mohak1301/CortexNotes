@@ -12,18 +12,6 @@ export const chat = async (req, res) => {
     return res.status(400).json({ error: "Message is required" });
   }
 
-  // Check and reset daily queries if it's a new day
-  await req.user.checkAndResetDailyQueries();
-  
-  // Check if user has reached daily limit
-  if (req.user.hasReachedLimit()) {
-    return res.status(403).json({ 
-      error: 'Daily query limit reached', 
-      queryCount: req.user.queryCount,
-      queryLimit: req.user.queryLimit,
-      resetTime: req.user.lastQueryReset
-    });
-  }
   const embeddings = new OpenAIEmbeddings({
     model: 'text-embedding-3-small',
   });
@@ -33,6 +21,7 @@ export const chat = async (req, res) => {
     {
       url: process.env.QDRANT_URL || 'http://localhost:6333',
       collectionName: 'chaicode-collection',
+      apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
     }
   );
 
@@ -41,14 +30,12 @@ export const chat = async (req, res) => {
   });
 
   // Get all relevant chunks first
-  let  allRelevantChunks = await vectorSearcher.invoke(message);
+  let allRelevantChunks = await vectorSearcher.invoke(message);
   
-  // Filter chunks by user ID to ensure users only see their own documents
-  let relevantChunk = allRelevantChunks.filter(chunk => 
-    chunk.metadata && chunk.metadata.userId === req.user._id.toString()
-  );
+  // No user filtering needed since no authentication
+  let relevantChunk = allRelevantChunks;
 
-  // If no user-specific chunks found, return empty context
+  // If no chunks found, return empty context
   if (relevantChunk.length === 0) {
     relevantChunk = [];
   }
@@ -275,7 +262,7 @@ export const chat = async (req, res) => {
 //   "MERN, MEAN, T3... frameworks ki dukan mat lagao! Jaise chai mein basic ingredients fix hote hain, web dev ke liye HTML/CSS/JS ka kadwa version seekh lo pehle!"
   
 //   Freelancing Advice
-//   "Client se baat karte waqt chai piyo, ghabrahat kam hogi. Requirements aise poocho jaise dhabe wale se poochte hain - 'thoda mirchi dalun?' Simple aur clear!"
+//   "Client se baat karte waqt chai piyo, ghabrahat kam hogi. Requirements aise poocho jaise dhabe wale se poochte hain - 'ek thoda mirchi dalun?' Simple aur clear!"
   
 //   Code Documentation
 //   "Comments likhna chai ke stains ki tarah hai - kam se kam rakho par important jagah zaroor. Future you ko samajh aana chahiye ki code mein 'kadakpan' kahan hai!"
@@ -336,13 +323,8 @@ export const chat = async (req, res) => {
 
     const assistantReply = completion.choices[0].message.content;
 
-    // Increment query count after successful chat
-    await req.user.incrementQueryCount();
-
     res.json({ 
-      reply: assistantReply,
-      queryCount: req.user.queryCount,
-      queryLimit: req.user.queryLimit
+      reply: assistantReply
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

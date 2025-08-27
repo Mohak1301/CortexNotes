@@ -41,9 +41,10 @@ export const pdfloader = async (pdfBuffer, originalFilename, userId) => {
     const vectorStore = await QdrantVectorStore.fromDocuments(docs, embeddings, {
       url: process.env.QDRANT_URL || 'http://localhost:6333',
       collectionName: 'chaicode-collection',
+      apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
     });
 
-
+    console.log(`PDF processed and ${docs.length} chunks added to vector database`);
     
   } catch (error) {
     console.error("PDF processing error:", error);
@@ -88,7 +89,10 @@ export const textloader = async (text, userId) => {
   const vectorStore = await QdrantVectorStore.fromDocuments(docs, embeddings, {
     url: process.env.QDRANT_URL || 'http://localhost:6333',
     collectionName: 'chaicode-collection',
+    apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
   });
+
+  console.log(`Text processed and ${docs.length} chunks added to vector database`);
 
 }
 catch(error){
@@ -125,8 +129,10 @@ export const urlloader = async (link, userId) => {
       const vectorStore = await QdrantVectorStore.fromDocuments(docs, embeddings, {
         url: process.env.QDRANT_URL || 'http://localhost:6333',
         collectionName: 'chaicode-collection',
+        apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
       }
       )
 
+      console.log(`URL processed and ${docs.length} chunks added to vector database`);
 
 }
