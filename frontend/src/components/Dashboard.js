@@ -32,20 +32,10 @@ const Dashboard = () => {
 
   // Load sources from localStorage on component mount
   useEffect(() => {
-    const savedSources = localStorage.getItem('cortexNotes_sources');
-    if (savedSources) {
-      try {
-        const parsedSources = JSON.parse(savedSources);
-        setSources(parsedSources);
-        // If sources exist, hide the sources panel
-        if (parsedSources.length > 0) {
-          setShowSourcesPanel(false);
-        }
-      } catch (error) {
-        console.error('Error loading sources from localStorage:', error);
-        setSources([]);
-      }
-    }
+    // Clear localStorage on page load to ensure fresh start
+    localStorage.removeItem('cortexNotes_sources');
+    setSources([]);
+    setShowSourcesPanel(true);
   }, []);
 
   // Hide sources panel whenever sources are added
