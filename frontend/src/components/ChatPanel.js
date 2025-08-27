@@ -2,8 +2,21 @@ import React, { useState, useRef, useEffect } from 'react';
 
 const ChatPanel = ({ messages, onSendMessage, isLoading, sourcesCount }) => {
   const [inputValue, setInputValue] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
   const textareaRef = useRef(null);
   const messagesEndRef = useRef(null);
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -99,7 +112,11 @@ const ChatPanel = ({ messages, onSendMessage, isLoading, sourcesCount }) => {
             <textarea
               ref={textareaRef}
               className="chat-input"
-              placeholder={sourcesCount === 0 ? "Please upload any resource to start a conversation" : "Ask me anything about your uploaded resources..."}
+              placeholder={
+                sourcesCount === 0 
+                  ? (isMobile ? "Please upload a file" : "Please upload any resource to start a conversation")
+                  : (isMobile ? "Start conversation" : "Ask me anything about your uploaded resources...")
+              }
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
