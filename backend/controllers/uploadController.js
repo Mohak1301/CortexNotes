@@ -1,5 +1,4 @@
 import { pdfloader, textloader, urlloader } from "../helpers.js";
-import Source from "../models/Source.js";
 
 export const uploadPDF = async (req, res) => {
   try {
@@ -7,27 +6,21 @@ export const uploadPDF = async (req, res) => {
       return res.status(400).json({ error: "No PDF file uploaded" });
     }
 
-    await pdfloader(req.file.buffer, req.file.originalname, req.user._id.toString());
+    await pdfloader(req.file.buffer, req.file.originalname, 'demo-user');
     
-    // Save source to database
-    const source = new Source({
-      userId: req.user._id,
+    // Return source data for frontend to store locally
+    const source = {
+      id: Date.now(),
       name: req.file.originalname,
       type: 'PDF',
       size: req.file.size,
-      originalFilename: req.file.originalname
-    });
-    await source.save();
+      originalFilename: req.file.originalname,
+      uploadedAt: new Date()
+    };
     
     res.json({ 
       message: "PDF uploaded and processed", 
-      source: {
-        id: source._id,
-        name: source.name,
-        type: source.type,
-        size: source.size,
-        uploadedAt: source.uploadedAt
-      }
+      source: source
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -37,26 +30,20 @@ export const uploadPDF = async (req, res) => {
 export const uploadText = async (req, res) => {
   try {
     const { text } = req.body;
-    await textloader(text, req.user._id.toString());
+    await textloader(text, 'demo-user');
     
-    // Save source to database
-    const source = new Source({
-      userId: req.user._id,
+    // Return source data for frontend to store locally
+    const source = {
+      id: Date.now(),
       name: `Text Document ${new Date().toLocaleDateString()}`,
       type: 'TEXT',
-      size: text.length
-    });
-    await source.save();
-
+      size: text.length,
+      uploadedAt: new Date()
+    };
+    
     res.json({ 
       message: "Text received", 
-      source: {
-        id: source._id,
-        name: source.name,
-        type: source.type,
-        size: source.size,
-        uploadedAt: source.uploadedAt
-      }
+      source: source
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -66,27 +53,21 @@ export const uploadText = async (req, res) => {
 export const uploadLink = async (req, res) => {
   try {
     const { link } = req.body;
-    await urlloader(link, req.user._id.toString());
+    await urlloader(link, 'demo-user');
     
-    // Save source to database
-    const source = new Source({
-      userId: req.user._id,
+    // Return source data for frontend to store locally
+    const source = {
+      id: Date.now(),
       name: `Website: ${new URL(link).hostname}`,
       type: 'URL',
       size: 0,
-      sourceUrl: link
-    });
-    await source.save();
-
+      sourceUrl: link,
+      uploadedAt: new Date()
+    };
+    
     res.json({ 
       message: "Link received", 
-      source: {
-        id: source._id,
-        name: source.name,
-        type: source.type,
-        size: source.size,
-        uploadedAt: source.uploadedAt
-      }
+      source: source
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -1,22 +1,71 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import { getApiUrl, API_ENDPOINTS } from '../config/api.js';
 import { apiFetch, handleApiResponse } from '../utils/apiUtils.js';
 import toast from 'react-hot-toast';
 import SourcesPanel from './SourcesPanel';
 import ChatPanel from './ChatPanel';
 
+const MAX_DOCUMENTS = 4;
+
 function MainApp() {
-  const { getAuthHeaders, user, updateUser, refreshAccessToken } = useAuth();
   const [sources, setSources] = useState([]);
   const [messages, setMessages] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [isLoadingSources, setIsLoadingSources] = useState(true);
 
+  // Load sources from localStorage on component mount
+  useEffect(() => {
+    const savedSources = localStorage.getItem('cortexNotes_sources');
+    if (savedSources) {
+      try {
+        setSources(JSON.parse(savedSources));
+      } catch (error) {
+        console.error('Error loading sources from localStorage:', error);
+        setSources([]);
+      }
+    }
+    setIsLoadingSources(false);
+  }, []);
+
+  // Save sources to localStorage whenever sources change
+  useEffect(() => {
+    localStorage.setItem('cortexNotes_sources', JSON.stringify(sources));
+  }, [sources]);
+
+  // Handle page refresh - clear vector DB
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Use sendBeacon for more reliable cleanup on page unload
+      const cleanupData = JSON.stringify({ action: 'clear_all' });
+      navigator.sendBeacon(getApiUrl(API_ENDPOINTS.CLEAR_ALL_SOURCES), cleanupData);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        // Page is being hidden (refresh, close, navigate away)
+        handleBeforeUnload();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   const handleFileUpload = useCallback(async (files) => {
     // Handle direct source objects (for text/url)
     if (Array.isArray(files) && files[0] && typeof files[0] === 'object' && files[0].id) {
+      // Check if adding these sources would exceed the limit
+      const newSourcesCount = sources.length + files.length;
+      if (newSourcesCount > MAX_DOCUMENTS) {
+        toast.error(`You can only have ${MAX_DOCUMENTS} documents. Please delete some existing documents first.`);
+        return;
+      }
       setSources(prev => [...prev, ...files]);
       return;
     }
@@ -27,15 +76,18 @@ function MainApp() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (file.type === 'application/pdf') {
+        // Check if adding this file would exceed the limit
+        if (sources.length >= MAX_DOCUMENTS) {
+          toast.error(`You can only have ${MAX_DOCUMENTS} documents. Please delete some existing documents first.`);
+          return;
+        }
+
         formData.append('pdf', file);
         
         try {
           setIsUploading(true);
           const response = await fetch(getApiUrl(API_ENDPOINTS.PDF_UPLOAD), {
             method: 'POST',
-            headers: {
-              'Authorization': getAuthHeaders().Authorization,
-            },
             body: formData,
           });
           
@@ -55,7 +107,47 @@ function MainApp() {
         }
       }
     }
-  }, [getAuthHeaders]);
+  }, [sources.length]);
+
+  const handleSourceDeleted = useCallback(async (deletedSourceId) => {
+    try {
+      // Delete specific vectors from Qdrant Cloud
+      const response = await apiFetch(API_ENDPOINTS.DELETE_SOURCE(deletedSourceId), {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        // Remove from local state
+        setSources(prev => prev.filter(source => source.id !== deletedSourceId));
+        toast.success('Source deleted successfully');
+      } else {
+        toast.error('Failed to delete source from vector database');
+      }
+    } catch (error) {
+      console.error('Error deleting source:', error);
+      toast.error('Failed to delete source');
+    }
+  }, []);
+
+  const handleSourcesCleared = useCallback(async () => {
+    try {
+      // Clear all vectors from Qdrant Cloud
+      const response = await apiFetch(API_ENDPOINTS.CLEAR_ALL_SOURCES, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        // Clear local state
+        setSources([]);
+        toast.success('All sources cleared successfully');
+      } else {
+        toast.error('Failed to clear sources from vector database');
+      }
+    } catch (error) {
+      console.error('Error clearing sources:', error);
+      toast.error('Failed to clear sources');
+    }
+  }, []);
 
   const handleSendMessage = useCallback(async (message) => {
     if (!message.trim()) return;
@@ -71,47 +163,12 @@ function MainApp() {
     setIsChatLoading(true);
 
     try {
-      const response = await fetch(getApiUrl(API_ENDPOINTS.CHAT), {
+      const response = await apiFetch(API_ENDPOINTS.CHAT, {
         method: 'POST',
-        headers: getAuthHeaders(),
         body: JSON.stringify({ message }),
       });
 
-      // Handle session expiration
-      if (response.status === 401) {
-        try {
-          await refreshAccessToken();
-          // Retry the request with new token
-          const retryResponse = await fetch(getApiUrl(API_ENDPOINTS.CHAT), {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ message }),
-          });
-          
-          if (retryResponse.ok) {
-            const data = await retryResponse.json();
-            const assistantMessage = {
-              id: Date.now() + 1,
-              type: 'assistant',
-              content: data.reply,
-              timestamp: new Date()
-            };
-            setMessages(prev => [...prev, assistantMessage]);
-            
-            if (data.queryCount !== undefined && updateUser) {
-              updateUser({
-                ...user,
-                queryCount: data.queryCount,
-                queryLimit: data.queryLimit
-              });
-            }
-          } else {
-            toast.error('Failed to send message. Please try again.');
-          }
-        } catch (refreshError) {
-          toast.error('Session expired. Please log in again.');
-        }
-      } else if (response.ok) {
+      if (response.ok) {
         const data = await response.json();
         const assistantMessage = {
           id: Date.now() + 1,
@@ -120,14 +177,6 @@ function MainApp() {
           timestamp: new Date()
         };
         setMessages(prev => [...prev, assistantMessage]);
-        
-        if (data.queryCount !== undefined && updateUser) {
-          updateUser({
-            ...user,
-            queryCount: data.queryCount,
-            queryLimit: data.queryLimit
-          });
-        }
       } else {
         const errorData = await response.json().catch(() => ({}));
         toast.error(errorData.error || 'Failed to send message');
@@ -138,53 +187,7 @@ function MainApp() {
     } finally {
       setIsChatLoading(false);
     }
-  }, [getAuthHeaders, refreshAccessToken, updateUser, user]);
-
-  // Fetch user sources on component mount
-  useEffect(() => {
-    const fetchSources = async () => {
-      try {
-        const response = await fetch(getApiUrl(API_ENDPOINTS.SOURCES), {
-          method: 'GET',
-          headers: getAuthHeaders(),
-        });
-        
-        // Handle session expiration
-        if (response.status === 401) {
-          try {
-            await refreshAccessToken();
-            // Retry the request with new token
-            const retryResponse = await fetch(getApiUrl(API_ENDPOINTS.SOURCES), {
-              method: 'GET',
-              headers: getAuthHeaders(),
-            });
-            
-            if (retryResponse.ok) {
-              const data = await retryResponse.json();
-              setSources(data.sources || []);
-            } else {
-              toast.error('Failed to load sources');
-            }
-          } catch (refreshError) {
-            toast.error('Session expired. Please log in again.');
-          }
-        } else if (response.ok) {
-          const data = await response.json();
-          setSources(data.sources || []);
-        } else {
-          const errorData = await response.json();
-          toast.error('Failed to load sources');
-        }
-      } catch (error) {
-        console.error('Error fetching sources:', error);
-        toast.error('Failed to load sources');
-      } finally {
-        setIsLoadingSources(false);
-      }
-    };
-
-    fetchSources();
-  }, [getAuthHeaders, refreshAccessToken]);
+  }, []);
   
   return (
     <div className="main-app-container">
@@ -192,6 +195,10 @@ function MainApp() {
         sources={sources}
         onFileUpload={handleFileUpload}
         isLoading={isUploading || isLoadingSources}
+        onSourceDeleted={handleSourceDeleted}
+        onSourcesCleared={handleSourcesCleared}
+        maxDocuments={MAX_DOCUMENTS}
+        currentCount={sources.length}
       />
       {isUploading && (
         <div className="loading-overlay">

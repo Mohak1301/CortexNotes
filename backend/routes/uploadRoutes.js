@@ -1,7 +1,6 @@
 import express from "express";
 import multer from "multer";
 import { uploadPDF, uploadText, uploadLink } from "../controllers/uploadController.js";
-import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -13,9 +12,9 @@ const upload = multer({
   }
 });
 
-// Upload routes - require authentication
-router.post("/pdfupload", authMiddleware, upload.single('pdf'), uploadPDF);
-router.post("/text", authMiddleware, uploadText);
-router.post("/link", authMiddleware, uploadLink);
+// Upload routes - no authentication required
+router.post("/pdfupload", upload.single('pdf'), uploadPDF);
+router.post("/text", uploadText);
+router.post("/link", uploadLink);
 
 export default router;

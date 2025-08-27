@@ -1,29 +1,15 @@
 // API Configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || '';
-
-// Helper function to get full API URL
+// Using Vercel rewrites, so always use relative URLs
 export const getApiUrl = (endpoint) => {
   // Remove leading slash if present
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   
-  // In development, use relative URL (proxy will handle it)
-  if (process.env.NODE_ENV === 'development') {
-    return `/${cleanEndpoint}`;
-  }
-  
-  // In production, use full URL
-  return `${API_BASE_URL}/${cleanEndpoint}`;
+  // Always use relative URL - Vercel rewrite will handle routing to backend
+  return `/${cleanEndpoint}`;
 };
 
 // API endpoints
 export const API_ENDPOINTS = {
-  // Auth endpoints
-  REGISTER: '/api/auth/register',
-  LOGIN: '/api/auth/login',
-  LOGOUT: '/api/auth/logout',
-  REFRESH: '/api/auth/refresh',
-  PROFILE: '/api/auth/profile',
-  
   // Chat endpoints
   CHAT: '/api/chat',
   
@@ -32,8 +18,9 @@ export const API_ENDPOINTS = {
   TEXT_UPLOAD: '/api/text',
   LINK_UPLOAD: '/api/link',
   
-  // Sources endpoints
-  SOURCES: '/api/sources',
+  // Sources management endpoints
+  DELETE_SOURCE: (sourceId) => `/api/sources/${sourceId}`,
+  CLEAR_ALL_SOURCES: '/api/sources',
 };
 
 export default getApiUrl;

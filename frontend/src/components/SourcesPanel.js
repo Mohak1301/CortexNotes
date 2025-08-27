@@ -1,10 +1,9 @@
 import React, { useRef, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import { getApiUrl, API_ENDPOINTS } from '../config/api.js';
+import { apiFetch } from '../utils/apiUtils.js';
 import toast from 'react-hot-toast';
 
-const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
-  const { getAuthHeaders, refreshAccessToken } = useAuth();
+const SourcesPanel = ({ sources, onFileUpload, isLoading, onSourceDeleted, onSourcesCleared, maxDocuments = 4, currentCount = 0 }) => {
   const fileInputRef = useRef(null);
   const [showTextModal, setShowTextModal] = useState(false);
   const [textContent, setTextContent] = useState('');
@@ -12,21 +11,34 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
   const [urlContent, setUrlContent] = useState('');
   const [isTextUploading, setIsTextUploading] = useState(false);
   const [isUrlUploading, setIsUrlUploading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const isLimitReached = currentCount >= maxDocuments;
 
   const handleFileClick = () => {
+    if (isLimitReached) {
+      toast.error(`You can only have ${maxDocuments} documents. Please delete some existing documents first.`);
+      return;
+    }
     fileInputRef.current?.click();
   };
 
   const handleFileChange = (e) => {
     const files = e.target.files;
     if (files && files.length > 0) {
+      if (currentCount + files.length > maxDocuments) {
+        toast.error(`You can only have ${maxDocuments} documents. Please delete some existing documents first.`);
+        return;
+      }
       onFileUpload(files);
     }
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    e.currentTarget.classList.add('dragover');
+    if (!isLimitReached) {
+      e.currentTarget.classList.add('dragover');
+    }
   };
 
   const handleDragLeave = (e) => {
@@ -37,8 +49,16 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
   const handleDrop = (e) => {
     e.preventDefault();
     e.currentTarget.classList.remove('dragover');
+    if (isLimitReached) {
+      toast.error(`You can only have ${maxDocuments} documents. Please delete some existing documents first.`);
+      return;
+    }
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
+      if (currentCount + files.length > maxDocuments) {
+        toast.error(`You can only have ${maxDocuments} documents. Please delete some existing documents first.`);
+        return;
+      }
       onFileUpload(files);
     }
   };
@@ -51,43 +71,54 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const handleDeleteSource = async (sourceId) => {
+    if (!window.confirm('Are you sure you want to delete this source? This will also remove its embeddings from the vector database.')) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      await onSourceDeleted(sourceId);
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Failed to delete source');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleClearAllSources = async () => {
+    if (!window.confirm('Are you sure you want to delete ALL sources? This will also remove all embeddings from the vector database. This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      await onSourcesCleared();
+    } catch (error) {
+      console.error('Clear all error:', error);
+      toast.error('Failed to clear sources');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleTextSubmit = async () => {
     if (!textContent.trim()) return;
     
+    if (isLimitReached) {
+      toast.error(`You can only have ${maxDocuments} documents. Please delete some existing documents first.`);
+      return;
+    }
+    
     try {
       setIsTextUploading(true);
-      const response = await fetch(getApiUrl(API_ENDPOINTS.TEXT_UPLOAD), {
+      const response = await apiFetch(API_ENDPOINTS.TEXT_UPLOAD, {
         method: 'POST',
-        headers: getAuthHeaders(),
         body: JSON.stringify({ text: textContent }),
       });
       
-      // Handle session expiration
-      if (response.status === 401) {
-        try {
-          await refreshAccessToken();
-          // Retry the request with new token
-          const retryResponse = await fetch(getApiUrl(API_ENDPOINTS.TEXT_UPLOAD), {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ text: textContent }),
-          });
-          
-          if (retryResponse.ok) {
-            const data = await retryResponse.json();
-            if (data.source) {
-              onFileUpload([data.source]);
-            }
-            setTextContent('');
-            setShowTextModal(false);
-            toast.success('Text uploaded successfully');
-          } else {
-            toast.error('Failed to upload text');
-          }
-        } catch (refreshError) {
-          toast.error('Session expired. Please log in again.');
-        }
-      } else if (response.ok) {
+      if (response.ok) {
         const data = await response.json();
         if (data.source) {
           onFileUpload([data.source]);
@@ -110,40 +141,19 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
   const handleUrlSubmit = async () => {
     if (!urlContent.trim()) return;
     
+    if (isLimitReached) {
+      toast.error(`You can only have ${maxDocuments} documents. Please delete some existing documents first.`);
+      return;
+    }
+    
     try {
       setIsUrlUploading(true);
-      const response = await fetch(getApiUrl(API_ENDPOINTS.LINK_UPLOAD), {
+      const response = await apiFetch(API_ENDPOINTS.LINK_UPLOAD, {
         method: 'POST',
-        headers: getAuthHeaders(),
         body: JSON.stringify({ link: urlContent }),
       });
       
-      // Handle session expiration
-      if (response.status === 401) {
-        try {
-          await refreshAccessToken();
-          // Retry the request with new token
-          const retryResponse = await fetch(getApiUrl(API_ENDPOINTS.LINK_UPLOAD), {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ link: urlContent }),
-          });
-          
-          if (retryResponse.ok) {
-            const data = await retryResponse.json();
-            if (data.source) {
-              onFileUpload([data.source]);
-            }
-            setUrlContent('');
-            setShowUrlModal(false);
-            toast.success('URL uploaded successfully');
-          } else {
-            toast.error('Failed to upload URL');
-          }
-        } catch (refreshError) {
-          toast.error('Session expired. Please log in again.');
-        }
-      } else if (response.ok) {
+      if (response.ok) {
         const data = await response.json();
         if (data.source) {
           onFileUpload([data.source]);
@@ -166,7 +176,27 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
   return (
     <div className="sources-panel">
       <div className="sources-header">
-        <h2 className="sources-title">Add Your Resouces Below</h2>
+        <div className="sources-title-section">
+          <h2 className="sources-title">Add Your Resources Below</h2>
+          <div className="document-limit">
+            <span className="limit-counter">
+              {currentCount}/{maxDocuments} documents
+            </span>
+            {isLimitReached && (
+              <span className="limit-message">Please remove existing documents to add more</span>
+            )}
+          </div>
+        </div>
+        {sources.length > 0 && (
+          <button 
+            className="clear-all-btn"
+            onClick={handleClearAllSources}
+            disabled={isDeleting}
+            title="Clear all sources and embeddings"
+          >
+            {isDeleting ? 'Clearing...' : 'Clear All'}
+          </button>
+        )}
       </div>
 
       <input
@@ -181,7 +211,7 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
       {/* Source Type Selection */}
       <div className="source-types">
         <div 
-          className="source-type-box"
+          className={`source-type-box ${isLimitReached ? 'disabled' : ''}`}
           onClick={handleFileClick}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -200,8 +230,14 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
         </div>
 
         <div 
-          className="source-type-box"
-          onClick={() => setShowUrlModal(true)}
+          className={`source-type-box ${isLimitReached ? 'disabled' : ''}`}
+          onClick={() => {
+            if (isLimitReached) {
+              toast.error(`You can only have ${maxDocuments} documents. Please delete some existing documents first.`);
+              return;
+            }
+            setShowUrlModal(true);
+          }}
         >
           <div className="source-type-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -217,8 +253,14 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
         </div>
 
         <div 
-          className="source-type-box"
-          onClick={() => setShowTextModal(true)}
+          className={`source-type-box ${isLimitReached ? 'disabled' : ''}`}
+          onClick={() => {
+            if (isLimitReached) {
+              toast.error(`You can only have ${maxDocuments} documents. Please delete some existing documents first.`);
+              return;
+            }
+            setShowTextModal(true);
+          }}
         >
           <div className="source-type-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -280,6 +322,17 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading }) => {
                   {source.type} {source.size > 0 && `• ${formatFileSize(source.size)}`}
                 </div>
               </div>
+              <button 
+                className="delete-source-btn"
+                onClick={() => handleDeleteSource(source.id)}
+                disabled={isDeleting}
+                title="Delete this source and its embeddings"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
             </div>
           ))}
         </div>
