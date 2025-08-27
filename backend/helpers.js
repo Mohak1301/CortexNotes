@@ -41,7 +41,7 @@ export const pdfloader = async (pdfBuffer, originalFilename, userId) => {
   try {
     const vectorStore = await QdrantVectorStore.fromDocuments(docs, embeddings, {
       url: process.env.QDRANT_URL || 'http://localhost:6333',
-      collectionName: 'cortex-notes',
+      collectionName: process.env.QDRANT_COLLECTION_NAME || 'cortex-notes',
       apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
     });
     console.log('Vector store created successfully for PDF');
@@ -99,7 +99,7 @@ export const textloader = async (text, userId) => {
   try {
     const vectorStore = await QdrantVectorStore.fromDocuments(docs, embeddings, {
       url: process.env.QDRANT_URL || 'http://localhost:6333',
-      collectionName: 'cortex-notes',
+      collectionName: process.env.QDRANT_COLLECTION_NAME || 'cortex-notes',
       apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
     });
     console.log('Vector store created successfully');
@@ -145,7 +145,7 @@ export const urlloader = async (link, userId) => {
       try {
         const vectorStore = await QdrantVectorStore.fromDocuments(docs, embeddings, {
           url: process.env.QDRANT_URL || 'http://localhost:6333',
-          collectionName: 'cortex-notes',
+          collectionName: process.env.QDRANT_COLLECTION_NAME || 'cortex-notes',
           apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
         });
         console.log('Vector store created successfully for URL');
