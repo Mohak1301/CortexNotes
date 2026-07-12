@@ -1,11 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { getApiUrl, API_ENDPOINTS } from '../config/api.js';
-import { apiFetch, handleApiResponse } from '../utils/apiUtils.js';
+import { API_ENDPOINTS } from '../config/api.js';
+import { apiFetch } from '../utils/apiUtils.js';
 import toast from 'react-hot-toast';
 import SourcesPanel from './SourcesPanel';
 import ChatPanel from './ChatPanel';
-
-const MAX_DOCUMENTS = 4;
 
 function MainApp({ 
   sources, 
@@ -19,22 +17,6 @@ function MainApp({
 }) {
   const [messages, setMessages] = useState([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
-
-  // Handle page refresh - clear vector DB and localStorage
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      // Clear sources from backend on page refresh/close
-      const cleanupData = JSON.stringify({ action: 'clear_all' });
-      navigator.sendBeacon(getApiUrl(API_ENDPOINTS.CLEAR_ALL_SOURCES), cleanupData);
-    };
-
-    // Only trigger on actual page unload (refresh/close)
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, []);
 
   // Clear chat messages when sources are cleared
   useEffect(() => {
@@ -76,8 +58,7 @@ function MainApp({
         toast.error(errorData.error || 'Failed to send message');
       }
     } catch (error) {
-      console.error('Chat error:', error);
-      toast.error('Failed to send message. Please try again.');
+      toast.error(error.name === 'AbortError' ? 'The request timed out. Please try again.' : 'Could not reach the service. Please try again.');
     } finally {
       setIsChatLoading(false);
     }
@@ -115,17 +96,6 @@ function MainApp({
         sourcesCount={sources.length}
       />
       
-      {/* Fallback in case components don't load */}
-      <div style={{ 
-        position: 'absolute', 
-        top: '50%', 
-        left: '50%', 
-        transform: 'translate(-50%, -50%)', 
-        color: 'white',
-        display: 'none' // Hidden by default
-      }}>
-        Loading components...
-      </div>
     </div>
   );
 }

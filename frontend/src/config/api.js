@@ -5,6 +5,8 @@ export const getApiUrl = (endpoint) => {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   
   // Check if we're in development mode
+  const configuredBaseUrl = process.env.REACT_APP_API_URL?.replace(/\/$/, '');
+  if (configuredBaseUrl) return `${configuredBaseUrl}/${cleanEndpoint}`;
   const isDevelopment = process.env.NODE_ENV === 'development';
   
   if (isDevelopment) {
@@ -18,6 +20,10 @@ export const getApiUrl = (endpoint) => {
 
 // API endpoints
 export const API_ENDPOINTS = {
+  AUTH_REGISTER: '/api/auth/register',
+  AUTH_LOGIN: '/api/auth/login',
+  AUTH_LOGOUT: '/api/auth/logout',
+  AUTH_SESSION: '/api/auth/session',
   // Chat endpoints
   CHAT: '/api/chat',
   
@@ -29,6 +35,7 @@ export const API_ENDPOINTS = {
   // Sources management endpoints
   DELETE_SOURCE: (sourceId) => `/api/sources/${sourceId}`,
   CLEAR_ALL_SOURCES: '/api/sources',
+  LIST_SOURCES: '/api/sources',
 };
 
 export default getApiUrl;

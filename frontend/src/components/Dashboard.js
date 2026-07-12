@@ -1,12 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import MainApp from './MainApp';
 import MobileUploadModal from './MobileUploadModal';
-import { getApiUrl, API_ENDPOINTS } from '../config/api.js';
+import { API_ENDPOINTS } from '../config/api.js';
 import { apiFetch } from '../utils/apiUtils.js';
 import toast from 'react-hot-toast';
 import './Dashboard.css';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [sources, setSources] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -14,6 +18,7 @@ const Dashboard = () => {
   const [showSourcesPanel, setShowSourcesPanel] = useState(true);
 
   const MAX_DOCUMENTS = 4;
+  const sourceStorageKey = `cortexNotes_sources_${user.id}`;
 
   useEffect(() => {
     // Add smooth transition in effect
@@ -31,11 +36,26 @@ const Dashboard = () => {
     };
   }, []);
 
-  // Load sources from localStorage on component mount
+  // Restore the authenticated workspace from the server, with a local cache for resilience.
   useEffect(() => {
-    // Clear localStorage on page load to ensure fresh start
-    localStorage.removeItem('cortexNotes_sources');
-    setSources([]);
+    let cancelled = false;
+    const restoreSources = async () => {
+      try {
+        const response = await apiFetch(API_ENDPOINTS.LIST_SOURCES);
+        if (response.ok) {
+          const data = await response.json();
+          if (!cancelled) setSources(Array.isArray(data.sources) ? data.sources.slice(0, MAX_DOCUMENTS) : []);
+          return;
+        }
+      } catch { /* Fall back to the last known local source index. */ }
+      try {
+        const saved = JSON.parse(localStorage.getItem(sourceStorageKey) || '[]');
+        if (!cancelled) setSources(Array.isArray(saved) ? saved.slice(0, MAX_DOCUMENTS) : []);
+      } catch {
+        localStorage.removeItem(sourceStorageKey);
+      }
+    };
+    restoreSources();
     // Set initial panel state based on screen size
     const isMobile = window.innerWidth <= 768;
     if (isMobile) {
@@ -43,7 +63,8 @@ const Dashboard = () => {
     } else {
       setShowSourcesPanel(true); // Always show on desktop
     }
-  }, []);
+    return () => { cancelled = true; };
+  }, [sourceStorageKey]);
 
   // On desktop, always show sources panel. On mobile, hide it when sources are added
   useEffect(() => {
@@ -57,8 +78,13 @@ const Dashboard = () => {
 
   // Save sources to localStorage whenever sources change
   useEffect(() => {
-    localStorage.setItem('cortexNotes_sources', JSON.stringify(sources));
-  }, [sources]);
+    localStorage.setItem(sourceStorageKey, JSON.stringify(sources));
+  }, [sources, sourceStorageKey]);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login', { replace: true });
+  };
 
   // Handle window resize for responsive behavior
   useEffect(() => {
@@ -113,7 +139,7 @@ const Dashboard = () => {
         
         try {
           setIsUploading(true);
-          const response = await fetch(getApiUrl(API_ENDPOINTS.PDF_UPLOAD), {
+          const response = await apiFetch(API_ENDPOINTS.PDF_UPLOAD, {
             method: 'POST',
             body: formData,
           });
@@ -130,10 +156,11 @@ const Dashboard = () => {
               }
             }
           } else {
-            console.error('Upload failed');
+            const data = await response.json().catch(() => ({}));
+            toast.error(data.error || 'Upload failed');
           }
         } catch (error) {
-          console.error('Upload error:', error);
+          toast.error(error.name === 'AbortError' ? 'Upload timed out' : 'Upload failed');
         } finally {
           setIsUploading(false);
         }
@@ -194,9 +221,9 @@ const Dashboard = () => {
       <header className="dashboard-header">
         <div className="dashboard-header-content">
           <div className="dashboard-title">
-            <h1>CortexNotes</h1>
+            <div className="dashboard-brand-row"><span className="brand-mark small">C</span><h1>CortexNotes</h1><span className="workspace-badge">Workspace</span></div>
             <span className="user-info">
-              AI-Powered Document Chat • Max 4 Documents
+              Research across your sources with grounded AI
             </span>
           </div>
           <div className="dashboard-actions">
@@ -217,7 +244,7 @@ const Dashboard = () => {
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14,2 14,8 20,8" />
                 </svg>
-                Show Sources
+                Sources
               </button>
             )}
             {sources.length > 0 && showSourcesPanel && (
@@ -229,7 +256,7 @@ const Dashboard = () => {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                Hide Sources
+                Focus mode
               </button>
             )}
             <button 
@@ -242,7 +269,14 @@ const Dashboard = () => {
                 <polyline points="7,10 12,15 17,10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              Upload Sources
+              Add source
+            </button>
+            <div className="account-summary" title={user.email}>
+              <span className="account-avatar">{user.name?.charAt(0).toUpperCase()}</span>
+              <span className="account-copy"><strong>{user.name}</strong><small>{user.email}</small></span>
+            </div>
+            <button className="logout-btn" onClick={handleLogout} title="Sign out" aria-label="Sign out">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4" /></svg>
             </button>
           </div>
         </div>

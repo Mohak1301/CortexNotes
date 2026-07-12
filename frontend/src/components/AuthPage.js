@@ -1,0 +1,74 @@
+import React, { useState } from 'react';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import './AuthPage.css';
+
+const AuthPage = ({ mode }) => {
+  const isRegister = mode === 'register';
+  const { user, isAuthLoading, login, register } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmationSent, setConfirmationSent] = useState(false);
+
+  if (!isAuthLoading && user) return <Navigate to="/dashboard" replace />;
+
+  const update = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+    try {
+      const result = isRegister
+        ? await register(form.name, form.email, form.password)
+        : await login(form.email, form.password);
+      if (result.requiresEmailConfirmation) {
+        setConfirmationSent(true);
+      } else {
+        navigate(location.state?.from || '/dashboard', { replace: true });
+      }
+    } catch (authError) {
+      setError(authError.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <main className="auth-page">
+      <div className="auth-grid" aria-hidden="true" />
+      <Link className="auth-brand" to="/" aria-label="CortexNotes home"><span className="brand-mark">C</span><span>CortexNotes</span></Link>
+      <section className="auth-card" aria-labelledby="auth-title">
+        {confirmationSent ? (
+          <div className="auth-confirmation">
+            <div className="auth-success-icon">✓</div>
+            <span className="auth-kicker">ONE MORE STEP</span>
+            <h1 id="auth-title">Check your inbox</h1>
+            <p>We sent a confirmation link to <strong>{form.email}</strong>. Confirm your email, then sign in.</p>
+            <Link className="auth-primary-link" to="/login">Continue to sign in</Link>
+          </div>
+        ) : (
+          <>
+            <span className="auth-kicker">{isRegister ? 'CREATE YOUR WORKSPACE' : 'WELCOME BACK'}</span>
+            <h1 id="auth-title">{isRegister ? 'Start researching clearly.' : 'Sign in to CortexNotes.'}</h1>
+            <p className="auth-intro">{isRegister ? 'Your sources and conversations stay isolated in your account.' : 'Continue working with your private research sources.'}</p>
+            <form className="auth-form" onSubmit={submit}>
+              {isRegister && <label>Full name<input name="name" value={form.name} onChange={update} autoComplete="name" minLength="2" maxLength="60" required /></label>}
+              <label>Email address<input name="email" type="email" value={form.email} onChange={update} autoComplete="email" maxLength="254" required /></label>
+              <label>Password<input name="password" type="password" value={form.password} onChange={update} autoComplete={isRegister ? 'new-password' : 'current-password'} minLength="10" maxLength="128" required /><small>{isRegister ? 'Use at least 10 characters.' : ''}</small></label>
+              {error && <div className="auth-error" role="alert">{error}</div>}
+              <button className="auth-submit" disabled={isSubmitting}>{isSubmitting ? 'Please wait…' : isRegister ? 'Create account' : 'Sign in'}</button>
+            </form>
+            <p className="auth-switch">{isRegister ? 'Already have an account?' : 'New to CortexNotes?'} <Link to={isRegister ? '/login' : '/register'}>{isRegister ? 'Sign in' : 'Create an account'}</Link></p>
+          </>
+        )}
+      </section>
+      <p className="auth-security-note">Protected by secure, server-managed sessions</p>
+    </main>
+  );
+};
+
+export default AuthPage;

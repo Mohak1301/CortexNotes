@@ -1,22 +1,29 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
+import AuthPage from './components/AuthPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './contexts/AuthContext';
 import './App.css';
 import './transitions.css';
+import './production.css';
 
 function App() {
   return (
     <Router>
-      <div className="app">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/test" element={<div style={{color: 'white', padding: '20px'}}>Test route working!</div>} />
-        </Routes>
-      </div>
-      <Toaster 
+      <AuthProvider>
+        <div className="app">
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<AuthPage mode="login" />} />
+            <Route path="/register" element={<AuthPage mode="register" />} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      <Toaster
         position="top-right"
         toastOptions={{
           duration: 4000,
@@ -41,6 +48,7 @@ function App() {
           },
         }}
       />
+      </AuthProvider>
     </Router>
   );
 }

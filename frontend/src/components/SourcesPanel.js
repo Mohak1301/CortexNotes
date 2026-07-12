@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { getApiUrl, API_ENDPOINTS } from '../config/api.js';
+import { API_ENDPOINTS } from '../config/api.js';
 import { apiFetch } from '../utils/apiUtils.js';
 import toast from 'react-hot-toast';
 
@@ -210,7 +210,8 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading, onSourceDeleted, onSou
 
       {/* Source Type Selection */}
       <div className="source-types">
-        <div 
+        <button
+          type="button"
           className={`source-type-box ${isLimitReached ? 'disabled' : ''}`}
           onClick={handleFileClick}
           onDragOver={handleDragOver}
@@ -227,9 +228,10 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading, onSourceDeleted, onSou
             <h4>Upload PDF</h4>
             <p>Upload PDF documents</p>
           </div>
-        </div>
+        </button>
 
-        <div 
+        <button
+          type="button"
           className={`source-type-box ${isLimitReached ? 'disabled' : ''}`}
           onClick={() => {
             if (isLimitReached) {
@@ -250,9 +252,10 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading, onSourceDeleted, onSou
             <h4>Website URL</h4>
             <p>Import from web link</p>
           </div>
-        </div>
+        </button>
 
-        <div 
+        <button
+          type="button"
           className={`source-type-box ${isLimitReached ? 'disabled' : ''}`}
           onClick={() => {
             if (isLimitReached) {
@@ -271,7 +274,7 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading, onSourceDeleted, onSou
             <h4>Paste Text</h4>
             <p>Add text directly</p>
           </div>
-        </div>
+        </button>
       </div>
 
       {sources.length === 0 ? (

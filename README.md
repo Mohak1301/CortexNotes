@@ -1,199 +1,74 @@
-# CortexNotes - AI-Powered Document Chat
+# CortexNotes
 
-A complete authentication system with Node.js, Express, MongoDB, and React frontend.
+CortexNotes is an authenticated document-research workspace for chatting with PDFs, pasted notes, and public web pages. Supabase Auth manages user identities and sessions; the Express API scopes every Qdrant read and mutation to the verified Supabase user ID.
 
-## Features
+## Local development
 
-- **Authentication System**: JWT-based authentication with refresh tokens
-- **User Management**: Registration, login, logout with secure password hashing
-- **Query Limiting**: Track and limit user queries (default: 100 queries per user)
-- **Document Processing**: Upload PDFs, text, and URLs for AI chat
-- **Modern UI**: Smooth, responsive design with the same theme as NotebookLM
+Requirements: Node.js 20.11+, OpenAI, Qdrant, and a Supabase project.
 
-## Backend Setup
+1. In Supabase, keep the Email provider enabled. Decide whether users must confirm their email under **Authentication → Providers → Email**.
+2. Copy the project URL and publishable key from **Project Settings → API** into `backend/.env`.
+3. Add the deployed frontend URL to Supabase's allowed Site URL / Redirect URLs before production launch.
+4. Start both services:
 
-### Prerequisites
-- Node.js (v18 or higher)
-- MongoDB (local or cloud instance)
-- OpenAI API key
-
-### Installation
-
-1. **Install dependencies**:
-   ```bash
-   cd backend
-   npm install
-   ```
-
-2. **Environment Configuration**:
-   Create a `.env` file in the `backend` directory:
-   ```env
-   # OpenAI Configuration
-   OPENAI_API_KEY=your_openai_api_key_here
-
-   # Server Configuration
-   PORT=5000
-   NODE_ENV=development
-
-   # Frontend URL for CORS
-   FRONTEND_URL=http://localhost:3000
-
-   # MongoDB Configuration
-   MONGODB_URI=mongodb://localhost:27017/cortexnotes
-
-   # JWT Configuration
-   JWT_ACCESS_SECRET=your_super_secret_jwt_access_key_here_make_it_long_and_random_at_least_32_characters
-   JWT_REFRESH_SECRET=your_super_secret_jwt_refresh_key_here_make_it_long_and_random_at_least_32_characters
-   ```
-
-3. **Start MongoDB** (if using local instance):
-   ```bash
-   mongod
-   ```
-
-4. **Start the backend server**:
-   ```bash
-   npm start
-   ```
-
-## Frontend Setup
-
-### Installation
-
-1. **Install dependencies**:
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-2. **Start the frontend**:
-   ```bash
-   npm start
-   ```
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `POST /api/auth/refresh` - Refresh access token
-- `POST /api/auth/logout` - Logout user
-- `GET /api/auth/profile` - Get user profile
-- `GET /api/auth/protected` - Protected route example
-
-### Document Processing
-- `POST /api/pdfupload` - Upload PDF (requires auth)
-- `POST /api/text` - Upload text content (requires auth)
-- `POST /api/link` - Upload website URL (requires auth)
-
-### Chat
-- `POST /api/chat` - Send chat message (requires auth, checks query limit)
-
-## Authentication Flow
-
-1. **Registration**: User creates account with email/password
-2. **Login**: User logs in and receives access token (15min) + refresh token (7 days)
-3. **API Calls**: Frontend includes access token in Authorization header
-4. **Token Refresh**: When access token expires, frontend uses refresh token to get new access token
-5. **Query Limiting**: Each chat request increments user's query count, blocks when limit reached
-
-## Security Features
-
-- **Password Hashing**: bcrypt with salt rounds
-- **JWT Tokens**: Secure token-based authentication
-- **Refresh Tokens**: Stored in database with automatic expiration
-- **Query Limiting**: Prevents abuse with per-user limits
-- **CORS**: Configured for frontend domain
-- **Helmet**: Security headers middleware
-- **Input Validation**: Email format and password length validation
-
-## Database Schema
-
-### User Model
-```javascript
-{
-  email: String (unique, required),
-  password: String (hashed, required),
-  queryCount: Number (default: 0),
-  queryLimit: Number (default: 100),
-  refreshTokens: Array,
-  createdAt: Date
-}
+```bash
+cd backend
+cp env.example .env
+npm install
+npm start
 ```
 
-## Frontend Features
-
-- **Responsive Design**: Works on desktop and mobile
-- **Smooth Animations**: CSS transitions and keyframes
-- **Theme Consistency**: Matches existing app design
-- **Protected Routes**: Automatic redirect to login if not authenticated
-- **Loading States**: Visual feedback during API calls
-- **Error Handling**: User-friendly error messages
-
-## Usage
-
-1. **Register/Login**: Create account or sign in
-2. **Upload Documents**: Add PDFs, text, or URLs as sources
-3. **Chat**: Ask questions about uploaded documents
-4. **Monitor Usage**: Track query count in header
-5. **Logout**: Secure logout with token invalidation
-
-## Development
-
-### Backend Structure
-```
-backend/
-├── models/
-│   └── User.js
-├── routes/
-│   ├── auth.js
-│   ├── chatRoutes.js
-│   └── uploadRoutes.js
-├── middleware/
-│   └── authMiddleware.js
-├── controllers/
-│   ├── chatController.js
-│   └── uploadController.js
-├── helpers.js
-└── server.js
+```bash
+cd frontend
+npm install
+npm start
 ```
 
-### Frontend Structure
+Set `REACT_APP_API_URL` when the browser API is not hosted at `http://localhost:5000` in development or behind the same origin in production.
+
+## Authentication architecture
+
+- Passwords are submitted only to the Express BFF and immediately exchanged with Supabase Auth; CortexNotes never stores or logs them.
+- Access and refresh tokens are held in `HttpOnly` cookies and are never available to frontend JavaScript.
+- Session restoration transparently rotates expired access tokens through the refresh cookie.
+- Every protected request is verified with Supabase Auth and receives `req.user`; the immutable user ID becomes the Qdrant workspace filter.
+- Mutations require a cryptographically random double-submit CSRF token in addition to the session cookie.
+- Login and registration use a dedicated IP rate limit. API and AI-ingestion limits apply separately by IP and authenticated user.
+- Source indexes are restored from Qdrant after sign-in, including on a different device.
+
+## Cookie deployment settings
+
+For a same-site deployment such as `app.example.com` and `api.example.com`, use:
+
+```env
+AUTH_COOKIE_SAME_SITE=lax
+AUTH_COOKIE_SECURE=true
 ```
-frontend/
-├── src/
-│   ├── components/
-│   │   ├── Login.js
-│   │   ├── Register.js
-│   │   ├── Dashboard.js
-│   │   ├── MainApp.js
-│   │   ├── ProtectedRoute.js
-│   │   └── ...
-│   ├── contexts/
-│   │   └── AuthContext.js
-│   └── App.js
+
+If the frontend and API use unrelated domains such as `example.vercel.app` and `example.onrender.com`, browsers require:
+
+```env
+AUTH_COOKIE_SAME_SITE=none
+AUTH_COOKIE_SECURE=true
 ```
 
-## Environment Variables
+The API CORS allowlist must contain the exact frontend origin. Never use `*` with credentialed requests.
 
-Make sure to set these environment variables:
+## Other production controls
 
-- `OPENAI_API_KEY`: Your OpenAI API key
-- `MONGODB_URI`: MongoDB connection string
-- `JWT_ACCESS_SECRET`: Secret for access tokens (32+ chars)
-- `JWT_REFRESH_SECRET`: Secret for refresh tokens (32+ chars)
+- Helmet headers, strict credentialed CORS, disabled framework disclosure, no-store responses and graceful shutdown
+- Workspace-scoped Qdrant retrieval, listing and deletion using verified user IDs
+- PDF signature checks, sanitized filenames, bounded text/message/web content and extraction limits
+- SSRF-resistant URL imports with DNS and redirect validation, private-network blocking and timeouts
+- Centralized non-leaking errors with request IDs and required production configuration validation
 
-## Troubleshooting
+The built-in limiter is suitable for one API process. Multi-instance deployments must enforce a shared gateway limit or use Redis.
 
-1. **MongoDB Connection**: Ensure MongoDB is running and accessible
-2. **JWT Secrets**: Use strong, unique secrets for production
-3. **CORS Issues**: Verify frontend URL in backend CORS configuration
-4. **Token Expiration**: Check browser console for token refresh errors
+## Verification
 
-## Production Deployment
+```bash
+cd backend && npm test
+cd frontend && npm run build
+```
 
-1. **Environment Variables**: Set production values for all env vars
-2. **MongoDB**: Use cloud MongoDB instance (Atlas, etc.)
-3. **JWT Secrets**: Generate cryptographically secure secrets
-4. **HTTPS**: Enable HTTPS for production
-5. **Rate Limiting**: Consider adding rate limiting middleware
+Backend tests cover credential normalization, password policy, cookie parsing, CSRF enforcement, identifier generation, ingestion boundaries, filename sanitization and private-network URL rejection.

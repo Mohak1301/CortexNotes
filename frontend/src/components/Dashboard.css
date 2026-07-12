@@ -8,9 +8,9 @@
 }
 
 .dashboard-header {
-  background: linear-gradient(135deg, #1a1a1a, #2a2a2a, #3a3a3a);
+  background: rgba(13, 13, 16, .94);
   border-bottom: 1px solid var(--border-color);
-  padding: 16px 0;
+  padding: 13px 0;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -18,7 +18,7 @@
 }
 
 .dashboard-header-content {
-  max-width: 1200px;
+  max-width: none;
   margin: 0 auto;
   padding: 0 20px;
   display: flex;
@@ -31,6 +31,13 @@
   align-items: center;
   gap: 12px;
 }
+
+.account-summary { min-width: 0; display: flex; align-items: center; gap: 8px; padding-left: 10px; border-left: 1px solid rgba(255,255,255,.08); }
+.account-avatar { width: 30px; height: 30px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 9px; color: white; background: linear-gradient(135deg, rgba(255,107,157,.85), rgba(138,79,255,.9)); font-size: 11px; font-weight: 750; }
+.account-copy { min-width: 0; display: grid; max-width: 145px; }.account-copy strong,.account-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.account-copy strong { color: #d7d7dc; font-size: 10px; }.account-copy small { color: #666670; font-size: 8px; margin-top: 2px; }
+.logout-btn { width: 32px; height: 32px; display: grid; place-items: center; color: #85858f; background: transparent; border: 1px solid rgba(255,255,255,.08); border-radius: 8px; cursor: pointer; }.logout-btn:hover { color: #ff8b96; background: rgba(255,80,90,.06); border-color: rgba(255,80,90,.2); }
+
+@media (max-width: 640px) { .account-copy { display: none; }.account-summary { padding-left: 7px; }.workspace-badge,.user-info { display: none; }.dashboard-actions { gap: 6px; } }
 
 .navbar-upload-btn {
   background: var(--accent-gradient);
@@ -84,20 +91,27 @@
 }
 
 .dashboard-title h1 {
-  font-size: 24px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
   letter-spacing: -0.02em;
 }
 
+.dashboard-brand-row { display: flex; align-items: center; gap: 9px; }
+.workspace-badge { padding: 4px 7px; border-radius: 6px; color: #8d8d97; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.07); font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+
 .user-info {
   display: block;
   font-size: 12px;
   color: var(--text-secondary);
-  margin-top: 4px;
+  margin: 4px 0 0 37px;
   font-weight: 400;
 }
+
+.dashboard-actions button { min-height: 34px; }
+.navbar-toggle-btn, .navbar-upload-btn { border-radius: 9px; padding: 8px 12px; font-size: 11px; }
+.navbar-toggle-btn { background: rgba(255,255,255,.035); border-color: rgba(255,255,255,.09); }
 
 .dashboard-main {
   flex: 1;
@@ -248,5 +262,3 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-
-

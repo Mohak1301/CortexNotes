@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { getApiUrl, API_ENDPOINTS } from '../config/api.js';
+import { API_ENDPOINTS } from '../config/api.js';
 import { apiFetch } from '../utils/apiUtils.js';
 import toast from 'react-hot-toast';
 

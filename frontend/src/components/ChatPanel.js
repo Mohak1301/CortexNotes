@@ -52,9 +52,19 @@ const ChatPanel = ({ messages, onSendMessage, isLoading, sourcesCount }) => {
     }
   };
 
+  const suggestions = [
+    'Summarize the key ideas',
+    'What evidence supports the main argument?',
+    'List the most important takeaways',
+  ];
+
   return (
-    <div className="main-content">
-      <div className="chat-messages">
+    <section className="main-content" aria-label="Document conversation">
+      <div className="chat-context-bar">
+        <div><span className="status-dot" />{sourcesCount > 0 ? `${sourcesCount} source${sourcesCount === 1 ? '' : 's'} indexed` : 'Waiting for sources'}</div>
+        <span>Answers are generated from your workspace</span>
+      </div>
+      <div className="chat-messages" role="log" aria-live="polite">
         {messages.length === 0 && sourcesCount === 0 ? (
           <div className="chat-welcome">
             <div className="upload-icon">
@@ -64,8 +74,9 @@ const ChatPanel = ({ messages, onSendMessage, isLoading, sourcesCount }) => {
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
             </div>
-            <h2>Add a source to get started</h2>
-            <p>Upload a PDF, paste text, or add a website URL from the left panel to begin chatting.</p>
+            <span className="empty-kicker">YOUR RESEARCH SPACE</span>
+            <h2>Start with a source</h2>
+            <p>Add a PDF, some text, or a public web page. Your conversation will stay grounded in that material.</p>
           </div>
         ) : (
           <>
@@ -76,12 +87,17 @@ const ChatPanel = ({ messages, onSendMessage, isLoading, sourcesCount }) => {
                     <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 </div>
-                <h2>Ready to chat!</h2>
-                <p>You have {sourcesCount} source{sourcesCount !== 1 ? 's' : ''} loaded. Ask me anything about your content.</p>
+                <span className="empty-kicker">SOURCES READY</span>
+                <h2>What would you like to understand?</h2>
+                <p>Ask a specific question or start with one of these prompts.</p>
+                <div className="prompt-suggestions">
+                  {suggestions.map((suggestion) => <button key={suggestion} onClick={() => onSendMessage(suggestion)}>{suggestion}<ArrowIcon /></button>)}
+                </div>
               </div>
             )}
             {messages.map((message) => (
               <div key={message.id} className={`message message-${message.type}`}>
+                <div className="message-author">{message.type === 'user' ? 'You' : 'CortexNotes'}</div>
                 <div className="message-content">
                   {message.content}
                 </div>
@@ -121,12 +137,15 @@ const ChatPanel = ({ messages, onSendMessage, isLoading, sourcesCount }) => {
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               disabled={sourcesCount === 0}
+              maxLength={4000}
+              aria-label="Ask about your sources"
               rows={1}
             />
             <button 
               type="submit" 
               className="send-btn"
               disabled={!inputValue.trim() || isLoading || sourcesCount === 0}
+              aria-label="Send message"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="22" y1="2" x2="11" y2="13" />
@@ -135,31 +154,6 @@ const ChatPanel = ({ messages, onSendMessage, isLoading, sourcesCount }) => {
             </button>
           </form>
           
-          {/* Floating Robot */}
-          <div className="floating-robot">
-            <div className="mini-robot">
-              <div className="mini-robot-head">
-                <div className="mini-robot-eyes">
-                  <div className="mini-robot-eye">
-                    <div className="mini-eye-pupil"></div>
-                  </div>
-                  <div className="mini-robot-eye">
-                    <div className="mini-eye-pupil"></div>
-                  </div>
-                </div>
-                <div className="mini-robot-mouth"></div>
-                <div className="mini-robot-antenna">
-                  <div className="mini-antenna-ball"></div>
-                </div>
-              </div>
-              <div className="mini-robot-body">
-                <div className="mini-panel-light"></div>
-                <div className="mini-panel-light"></div>
-                <div className="mini-panel-light"></div>
-              </div>
-            </div>
-          </div>
-
           {sourcesCount > 0 && (
             <div className="sources-count">
               {sourcesCount} source{sourcesCount !== 1 ? 's' : ''}
@@ -167,8 +161,14 @@ const ChatPanel = ({ messages, onSendMessage, isLoading, sourcesCount }) => {
           )}
         </div>
       </div>
-    </div>
+    </section>
   );
 };
+
+const ArrowIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 export default ChatPanel;

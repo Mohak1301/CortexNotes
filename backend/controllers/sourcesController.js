@@ -1,166 +1,89 @@
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { QdrantVectorStore } from '@langchain/qdrant';
+import { ensureVectorIndexes } from '../services/vectorIndexes.js';
 
-// Delete a source's embeddings from vector DB
-export const deleteSource = async (req, res) => {
+const getClient = async () => {
+  const vectorStore = await QdrantVectorStore.fromExistingCollection(
+    new OpenAIEmbeddings({ model: 'text-embedding-3-small' }),
+    {
+      url: process.env.QDRANT_URL || 'http://localhost:6333',
+      collectionName: process.env.QDRANT_COLLECTION_NAME || 'cortex-notes',
+      apiKey: process.env.QDRANT_API_KEY,
+    },
+  );
+  const collectionName = process.env.QDRANT_COLLECTION_NAME || 'cortex-notes';
+  await ensureVectorIndexes(vectorStore.client, collectionName);
+  return {
+    client: vectorStore.client,
+    collectionName,
+  };
+};
+
+const workspaceCondition = (workspaceId) => ({
+  key: 'metadata.userId',
+  match: { value: workspaceId },
+});
+
+export const listSources = async (req, res, next) => {
+  try {
+    const { client, collectionName } = await getClient();
+    const result = await client.scroll(collectionName, {
+      limit: 10_000,
+      with_payload: true,
+      with_vector: false,
+      filter: { must: [workspaceCondition(req.workspaceId)] },
+    });
+    const sources = new Map();
+    for (const point of result.points || []) {
+      const metadata = point.payload?.metadata || {};
+      if (!metadata.sourceId || sources.has(metadata.sourceId)) continue;
+      const type = String(metadata.documentType || '').toUpperCase();
+      sources.set(metadata.sourceId, {
+        id: metadata.sourceId,
+        name: metadata.sourceName || metadata.originalFilename || metadata.sourceUrl || 'Untitled source',
+        type: type === 'PDF' ? 'PDF' : type === 'URL' ? 'URL' : 'TEXT',
+        size: Number(metadata.sourceSize) || 0,
+        uploadedAt: metadata.sourceUploadedAt || metadata.uploadedAt,
+        ...(metadata.sourceUrl ? { sourceUrl: metadata.sourceUrl } : {}),
+      });
+    }
+    res.json({ sources: [...sources.values()].sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt)) });
+  } catch (error) { next(error); }
+};
+
+export const deleteSource = async (req, res, next) => {
   try {
     const { sourceId } = req.params;
-    
-    try {
-      const embeddings = new OpenAIEmbeddings({
-        model: 'text-embedding-3-small',
-      });
-
-      const vectorStore = await QdrantVectorStore.fromExistingCollection(
-        embeddings,
-        {
-          url: process.env.QDRANT_URL || 'http://localhost:6333',
-          collectionName: process.env.QDRANT_COLLECTION_NAME || 'cortex-notes',
-          apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
-        }
-      );
-
-      const client = vectorStore.client;
-      const collectionName = process.env.QDRANT_COLLECTION_NAME || 'cortex-notes';
-      
-      // Get all points with payload to filter by sourceId
-      const points = await client.scroll(collectionName, {
-        limit: 10000,
-        with_payload: true,
-        with_vector: false
-      });
-      
-      if (points.points && points.points.length > 0) {
-        // Filter points that belong to the specific source
-        const sourcePoints = points.points.filter(point => 
-          point.payload && point.payload.sourceId === sourceId
-        );
-        
-        if (sourcePoints.length > 0) {
-          const pointIds = sourcePoints.map(point => point.id);
-          await client.delete(collectionName, {
-            wait: true,
-            points: pointIds
-          });
-          console.log(`Deleted ${pointIds.length} vectors for source ${sourceId}`);
-        } else {
-          console.log(`No vectors found for source ${sourceId}`);
-        }
-      }
-    } catch (vectorError) {
-      console.error('Error deleting vectors:', vectorError);
-      // Continue even if vector deletion fails
+    if (!/^(pdf|text|url)_[0-9a-f-]{36}$/i.test(sourceId || '')) {
+      return res.status(400).json({ error: 'Invalid source identifier' });
     }
-    
-    res.json({ 
-      message: 'Source embeddings deleted successfully',
-      sourceId: sourceId
+
+    const { client, collectionName } = await getClient();
+    await client.delete(collectionName, {
+      wait: true,
+      filter: {
+        must: [
+          workspaceCondition(req.workspaceId),
+          { key: 'metadata.sourceId', match: { value: sourceId } },
+        ],
+      },
     });
+
+    res.json({ message: 'Source deleted', sourceId });
   } catch (error) {
-    console.error('Error deleting source:', error);
-    res.status(500).json({ error: 'Failed to delete source' });
+    next(error);
   }
 };
 
-// Clear all embeddings from vector DB
-export const clearAllSources = async (req, res) => {
+export const clearAllSources = async (req, res, next) => {
   try {
-    // Handle both regular DELETE requests and sendBeacon requests
-    const isSendBeacon = req.method === 'POST' || req.headers['content-type'] === 'application/json';
-    
-    // Delete all embeddings from Qdrant Cloud
-    try {
-      const embeddings = new OpenAIEmbeddings({
-        model: 'text-embedding-3-small',
-      });
-
-      const vectorStore = await QdrantVectorStore.fromExistingCollection(
-        embeddings,
-        {
-          url: process.env.QDRANT_URL || 'http://localhost:6333',
-          collectionName: process.env.QDRANT_COLLECTION_NAME || 'cortex-notes',
-          apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
-        }
-      );
-
-      const client = vectorStore.client;
-      const collectionName = process.env.QDRANT_COLLECTION_NAME || 'cortex-notes';
-      
-      // Get all points and delete them
-      const points = await client.scroll(collectionName, {
-        limit: 10000,
-        with_payload: false,
-        with_vector: false
-      });
-      
-      if (points.points && points.points.length > 0) {
-        const pointIds = points.points.map(point => point.id);
-        await client.delete(collectionName, {
-          wait: true,
-          points: pointIds
-        });
-        console.log(`Deleted ${pointIds.length} vectors from collection`);
-      }
-    } catch (vectorError) {
-      console.error('Error clearing vectors:', vectorError);
-    }
-    
-    // For sendBeacon requests, don't send a response
-    if (isSendBeacon) {
-      res.status(200).end();
-    } else {
-      res.json({ 
-        message: 'All embeddings cleared successfully',
-        deletedCount: 0 // We don't track count in backend anymore
-      });
-    }
+    const { client, collectionName } = await getClient();
+    await client.delete(collectionName, {
+      wait: true,
+      filter: { must: [workspaceCondition(req.workspaceId)] },
+    });
+    res.json({ message: 'Workspace sources cleared' });
   } catch (error) {
-    console.error('Error clearing sources:', error);
-    if (!req.headers['content-type']?.includes('application/json')) {
-      res.status(200).end(); // For sendBeacon, always return 200
-    } else {
-      res.status(500).json({ error: 'Failed to clear sources' });
-    }
-  }
-};
-
-// Get all documents from vector DB (for testing)
-export const getAllDocuments = async (req, res) => {
-  try {
-    
-    const embeddings = new OpenAIEmbeddings({
-      model: 'text-embedding-3-small',
-    });
-
-    const vectorStore = await QdrantVectorStore.fromExistingCollection(
-      embeddings,
-      {
-        url: process.env.QDRANT_URL || 'http://localhost:6333',
-        collectionName: 'chaicode-collection',
-        apiKey: process.env.QDRANT_API_KEY, // For Qdrant Cloud
-      }
-    );
-
-    const client = vectorStore.client;
-    const collectionName = vectorStore.collectionName;
-    
-    const points = await client.scroll(collectionName, {
-      limit: 1000,
-      with_payload: true,
-      with_vector: false
-    });
-
-    const allDocs = points.points?.map(point => ({
-      id: point.id,
-      payload: point.payload
-    })) || [];
-
-    res.json({ 
-      totalDocuments: allDocs.length,
-      documents: allDocs 
-    });
-  } catch (error) {
-    console.error('Error testing vector database:', error);
-    res.status(500).json({ error: 'Failed to test vector database' });
+    next(error);
   }
 };

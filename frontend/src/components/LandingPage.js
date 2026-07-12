@@ -1,140 +1,82 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
+import { useAuth } from '../contexts/AuthContext';
+
+const ArrowIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 const LandingPage = () => {
   const navigate = useNavigate();
-
-  const handleGetStarted = () => {
-    // Add smooth transition effect
-    const app = document.querySelector('.app');
-    if (app) {
-      app.classList.add('page-transition-out');
-    }
-    
-    // Navigate after a brief delay for smooth transition
-    setTimeout(() => {
-      navigate('/dashboard');
-    }, 300);
-  };
+  const { user } = useAuth();
+  const openWorkspace = () => navigate(user ? '/dashboard' : '/register');
 
   return (
     <div className="landing-page">
-      {/* Background gradient */}
-      <div className="landing-background">
-        <div className="gradient-orb gradient-orb-1"></div>
-        <div className="gradient-orb gradient-orb-2"></div>
-        <div className="gradient-orb gradient-orb-3"></div>
-      </div>
+      <div className="landing-grid" aria-hidden="true" />
+      <header className="landing-header">
+        <a className="brand" href="#top" aria-label="CortexNotes home">
+          <span className="brand-mark">C</span>
+          <span>CortexNotes</span>
+        </a>
+        <button className="nav-cta" onClick={() => navigate(user ? '/dashboard' : '/login')}>{user ? 'Open workspace' : 'Sign in'} <ArrowIcon /></button>
+      </header>
 
-      {/* Main content */}
-      <div className="landing-content">
-        {/* Header */}
-        <header className="landing-header">
-          <div className="logo">
-            <span className="logo-text">CortexNotes</span>
-          </div>
-        </header>
-
-        {/* Hero section */}
-        <main className="landing-hero">
+      <main id="top" className="landing-main">
+        <section className="landing-hero" aria-labelledby="hero-title">
           <div className="hero-content">
-            <h1 className="hero-title">
-              <span className="title-line">AI-Powered</span>
-              <span className="title-line">Document Chat</span>
-            </h1>
-            
+            <div className="eyebrow"><span /> Grounded answers from your own sources</div>
+            <h1 id="hero-title">Turn scattered documents into <em>clear answers.</em></h1>
             <p className="hero-subtitle">
-              Transform your documents into intelligent conversations. 
-              Upload PDFs, text, or URLs and chat with your content instantly.
+              Bring PDFs, notes, and web pages into one focused workspace. CortexNotes finds the relevant context so you can understand, compare, and move faster.
             </p>
-
-            <button 
-              className="get-started-btn"
-              onClick={handleGetStarted}
-            >
-              Get Started
-              <svg className="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
+            <div className="hero-actions">
+              <button className="get-started-btn" onClick={openWorkspace}>Start researching <ArrowIcon /></button>
+              <span className="hero-note">Private account · Secure workspace</span>
+            </div>
+            <div className="trust-row" aria-label="Supported source types">
+              <span>PDF documents</span><i /> <span>Written notes</span><i /> <span>Web sources</span>
+            </div>
           </div>
 
-          {/* Coding/Robot Animation */}
-          <div className="hero-visual">
-            <div className="coding-animation">
-              {/* Robot Character */}
-              <div className="robot-character">
-                <div className="robot-head">
-                  <div className="robot-eyes">
-                    <div className="robot-eye"></div>
-                    <div className="robot-eye"></div>
-                  </div>
-                  <div className="robot-mouth"></div>
+          <div className="product-preview" aria-label="CortexNotes product preview">
+            <div className="preview-topbar">
+              <div className="preview-brand"><span className="brand-mark small">C</span> Research workspace</div>
+              <div className="window-dots"><span /><span /><span /></div>
+            </div>
+            <div className="preview-body">
+              <aside className="preview-sources">
+                <div className="preview-label">SOURCES <b>3</b></div>
+                <div className="preview-source active"><span>PDF</span><p>Market research.pdf<small>42 pages</small></p></div>
+                <div className="preview-source"><span>TXT</span><p>Interview notes<small>8,240 words</small></p></div>
+                <div className="preview-source"><span>URL</span><p>Industry report<small>Web source</small></p></div>
+                <button className="preview-add">+ Add source</button>
+              </aside>
+              <div className="preview-chat">
+                <div className="preview-status"><span /> 3 sources ready</div>
+                <div className="preview-question">What are the strongest themes across these sources?</div>
+                <div className="preview-answer">
+                  <div className="answer-icon">C</div>
+                  <p>The sources consistently highlight three themes: faster adoption, demand for trustworthy data, and a shift toward focused AI workflows.</p>
                 </div>
-                <div className="robot-body">
-                  <div className="robot-panel">
-                    <div className="panel-light"></div>
-                    <div className="panel-light"></div>
-                    <div className="panel-light"></div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Code Lines */}
-              <div className="code-lines">
-                <div className="code-line code-line-1">
-                  <span className="code-keyword">function</span> <span className="code-function">processDocument</span>() {'{'}
-                </div>
-                <div className="code-line code-line-2">
-                  <span className="code-indent">  </span><span className="code-keyword">const</span> <span className="code-variable">ai</span> = <span className="code-string">'intelligent'</span>;
-                </div>
-                <div className="code-line code-line-3">
-                  <span className="code-indent">  </span><span className="code-keyword">return</span> <span className="code-variable">conversation</span>;
-                </div>
-                <div className="code-line code-line-4">{'}'}</div>
-              </div>
-              
-              {/* Floating Elements */}
-              <div className="floating-elements">
-                <div className="floating-dot floating-dot-1"></div>
-                <div className="floating-dot floating-dot-2"></div>
-                <div className="floating-dot floating-dot-3"></div>
-                <div className="floating-dot floating-dot-4"></div>
+                <div className="preview-citations"><span>1 · Market research</span><span>2 · Interview notes</span></div>
+                <div className="preview-input">Ask a follow-up question <button aria-label="Send preview message"><ArrowIcon /></button></div>
               </div>
             </div>
           </div>
-        </main>
+        </section>
 
-        {/* Footer with social links */}
-        <footer className="landing-footer">
-          <div className="social-links">
-            <a 
-              href="https://x.com/MohakTiwar13" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="social-link"
-            >
-              <svg className="social-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-              </svg>
-              <span>X</span>
-            </a>
-            
-            <a 
-              href="https://www.linkedin.com/in/mohak-tiwari/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="social-link"
-            >
-              <svg className="social-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-              </svg>
-              <span>LinkedIn</span>
-            </a>
-          </div>
-        </footer>
-      </div>
+        <section className="feature-strip" aria-label="Product benefits">
+          <article><span>01</span><div><h2>Source-grounded</h2><p>Answers stay anchored to the material you provide.</p></div></article>
+          <article><span>02</span><div><h2>Built for focus</h2><p>A calm workspace without tabs, clutter, or context switching.</p></div></article>
+          <article><span>03</span><div><h2>Ready in moments</h2><p>Add a source and start exploring it immediately.</p></div></article>
+        </section>
+      </main>
+
+      <footer className="landing-footer"><span>© {new Date().getFullYear()} CortexNotes</span><span>Read deeply. Decide clearly.</span></footer>
     </div>
   );
 };
