@@ -22,6 +22,7 @@ export const getApiUrl = (endpoint) => {
 export const API_ENDPOINTS = {
   AUTH_REGISTER: '/api/auth/register',
   AUTH_LOGIN: '/api/auth/login',
+  AUTH_DEMO: '/api/auth/demo',
   AUTH_LOGOUT: '/api/auth/logout',
   AUTH_SESSION: '/api/auth/session',
   AUTH_FORGOT_PASSWORD: '/api/auth/forgot-password',

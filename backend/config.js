@@ -27,6 +27,10 @@ export const config = Object.freeze({
   ],
   supabaseUrl: (process.env.SUPABASE_URL || '').replace(/\/$/, ''),
   supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || '',
+  // A single pre-made account holding the sample documents. Visitors are signed
+  // into it so the product can be seen without an upload first.
+  demoEmail: (process.env.DEMO_EMAIL || '').trim().toLowerCase(),
+  demoPassword: process.env.DEMO_PASSWORD || '',
   authCookieSameSite: cookieSameSite,
   authCookieDomain: process.env.AUTH_COOKIE_DOMAIN || '',
   authCookieSecure: process.env.AUTH_COOKIE_SECURE

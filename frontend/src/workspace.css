@@ -124,6 +124,32 @@
   border-color: rgba(255, 255, 255, .2);
 }
 
+/* ---------- demo banner ---------- */
+.dashboard .demo-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 9px 16px;
+  background: rgba(255, 255, 255, .05);
+  border-bottom: 1px solid var(--ws-line-soft);
+  color: var(--ws-dim);
+  font-size: 11.5px;
+  text-align: center;
+}
+.dashboard .demo-banner button {
+  padding: 4px 11px;
+  border: 1px solid var(--ws-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ws-fg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dashboard .demo-banner button:hover { border-color: rgba(255, 255, 255, .28); }
+
 /* ---------- chat history rail ---------- */
 .dashboard .history-panel {
   display: flex;

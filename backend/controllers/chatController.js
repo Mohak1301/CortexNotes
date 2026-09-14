@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { validateChatMessage, validateConversationId } from '../utils/validation.js';
 import { getVectorStore } from '../services/vectorStore.js';
 import { appendMessage, createConversation, titleFromMessage } from '../services/chatHistory.js';
+import { isDemoUser } from '../middleware/demo.js';
 import { buildChatCompletionRequest } from '../services/chatCompletion.js';
 
 const client = new OpenAI();
@@ -51,19 +52,27 @@ export const chat = async (req, res, next) => {
   try {
   const message = validateChatMessage(req.body?.message);
 
+  // Every visitor shares the demo account, so saving their chats would show each
+  // person the last stranger's questions. The demo talks and forgets.
+  const ephemeral = isDemoUser(req);
+
   // A request with no conversation starts one. Both this and the user message are
   // written before any streaming begins: if storage is down, the caller gets a
   // clean error instead of an answer that was never saved.
-  const conversation = req.body?.conversationId
-    ? { id: validateConversationId(req.body.conversationId), title: null }
-    : await createConversation(req.accessToken, req.workspaceId, titleFromMessage(message));
+  const conversation = ephemeral
+    ? null
+    : req.body?.conversationId
+      ? { id: validateConversationId(req.body.conversationId), title: null }
+      : await createConversation(req.accessToken, req.workspaceId, titleFromMessage(message));
 
-  await appendMessage(req.accessToken, {
-    conversationId: conversation.id,
-    userId: req.workspaceId,
-    role: 'user',
-    content: message,
-  });
+  if (conversation) {
+    await appendMessage(req.accessToken, {
+      conversationId: conversation.id,
+      userId: req.workspaceId,
+      role: 'user',
+      content: message,
+    });
+  }
 
   // Built once per process, so this costs no round trip after the first request.
   const vectorStore = await getVectorStore();
@@ -398,10 +407,13 @@ export const chat = async (req, res, next) => {
     streaming = true;
 
     // A brand new conversation has an id the caller has never seen, and it needs it
-    // to send the next message into the same thread.
-    res.write(`data: ${JSON.stringify({
-      conversation: { id: conversation.id, title: conversation.title },
-    })}\n\n`);
+    // to send the next message into the same thread. An ephemeral chat has no id to
+    // send, and the client keeps it in memory instead.
+    if (conversation) {
+      res.write(`data: ${JSON.stringify({
+        conversation: { id: conversation.id, title: conversation.title },
+      })}\n\n`);
+    }
 
     // Retrieval finished before generation began, so the sources are already known.
     // Sending them first lets the interface show them while the model is still writing.
@@ -419,7 +431,7 @@ export const chat = async (req, res, next) => {
       }
     }
 
-    if (answer) {
+    if (answer && conversation) {
       try {
         await appendMessage(req.accessToken, {
           conversationId: conversation.id,

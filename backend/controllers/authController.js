@@ -105,6 +105,27 @@ export const login = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+// Signs the visitor into the shared demo account. The credentials live only on the
+// server, so the browser never learns them and the account cannot be reused outside
+// this endpoint.
+export const demoLogin = async (req, res, next) => {
+  try {
+    if (!config.demoEmail || !config.demoPassword) {
+      throw Object.assign(new Error('The demo is not available right now'), { status: 503 });
+    }
+
+    const result = await signIn(config.demoEmail, config.demoPassword);
+    if (!result.ok || !result.data?.access_token || !result.data?.user) {
+      // The visitor cannot fix this, so it reads as an outage rather than a refusal.
+      console.warn(`[${req.requestId}] demo sign-in failed: status=${result.status}`);
+      throw Object.assign(new Error('The demo is not available right now'), { status: 503 });
+    }
+
+    const csrfToken = issueSession(res, result.data);
+    res.json({ user: { ...publicUser(result.data.user), isDemo: true }, csrfToken });
+  } catch (error) { next(error); }
+};
+
 export const session = async (req, res, next) => {
   try {
     const cookies = parseCookies(req.headers.cookie);
@@ -128,7 +149,11 @@ export const session = async (req, res, next) => {
       csrfToken = crypto.randomBytes(32).toString('base64url');
       setCsrfCookie(res, csrfToken);
     }
-    res.json({ user: publicUser(userResult.data), csrfToken });
+    const user = publicUser(userResult.data);
+    res.json({
+      user: { ...user, isDemo: Boolean(config.demoEmail && user.email?.toLowerCase() === config.demoEmail) },
+      csrfToken,
+    });
   } catch (error) { next(error); }
 };
 

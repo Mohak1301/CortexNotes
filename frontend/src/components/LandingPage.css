@@ -194,3 +194,24 @@
   .pill, .cell, .nav-link { transition: none; }
   .pill-solid:hover { transform: none; }
 }
+
+
+/* Secondary to "Start researching", but still clearly a way in. */
+.hero-demo-btn {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 10px 20px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, .72);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color .18s ease, color .18s ease;
+}
+.hero-demo-btn:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, .34);
+  color: #fff;
+}
+.hero-demo-btn:disabled { cursor: progress; opacity: .6; }

@@ -3,6 +3,7 @@ import multer from "multer";
 import { uploadPDF, uploadText, uploadLink } from "../controllers/uploadController.js";
 import { config } from '../config.js';
 import { rateLimit } from '../middleware/security.js';
+import { blockDemoWrites } from '../middleware/demo.js';
 
 const router = express.Router();
 
@@ -22,8 +23,8 @@ const upload = multer({
 });
 
 const expensiveLimit = rateLimit({ limit: config.expensiveRateLimit, name: 'ingestion' });
-router.post("/pdfupload", expensiveLimit, upload.single('pdf'), uploadPDF);
-router.post("/text", expensiveLimit, uploadText);
-router.post("/link", expensiveLimit, uploadLink);
+router.post("/pdfupload", blockDemoWrites, expensiveLimit, upload.single('pdf'), uploadPDF);
+router.post("/text", blockDemoWrites, expensiveLimit, uploadText);
+router.post("/link", blockDemoWrites, expensiveLimit, uploadLink);
 
 export default router;

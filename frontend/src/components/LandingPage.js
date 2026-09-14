@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import WordReveal from './ui/WordReveal';
 import Reveal from './ui/Reveal';
@@ -57,8 +58,22 @@ const FEATURES = [
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, startDemo } = useAuth();
   const openWorkspace = () => navigate(user ? '/dashboard' : '/register');
+
+  // The empty workspace behind a sign-up is the real barrier, not the sign-up
+  // itself. This drops a first-time visitor straight into loaded documents.
+  const [isDemoStarting, setIsDemoStarting] = useState(false);
+  const tryDemo = async () => {
+    setIsDemoStarting(true);
+    try {
+      await startDemo();
+      navigate('/dashboard');
+    } catch (error) {
+      toast.error(error.message || 'The demo is not available right now');
+      setIsDemoStarting(false);
+    }
+  };
 
   const headline = 'Turn scattered documents into clear answers';
 
@@ -95,6 +110,9 @@ const LandingPage = () => {
               </p>
               <button className="pill pill-solid hero-cta" onClick={openWorkspace}>
                 Start researching
+              </button>
+              <button className="hero-demo-btn" onClick={tryDemo} disabled={isDemoStarting}>
+                {isDemoStarting ? 'Opening…' : 'Or try the demo — no sign-up'}
               </button>
             </div>
           </section>

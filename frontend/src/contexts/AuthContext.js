@@ -62,6 +62,9 @@ export const AuthProvider = ({ children }) => {
     { name, email, password },
   ), [authenticate]);
 
+  // The server holds the demo credentials, so there is nothing to pass in.
+  const startDemo = useCallback(() => authenticate(API_ENDPOINTS.AUTH_DEMO, {}), [authenticate]);
+
   const logout = useCallback(async () => {
     try {
       await apiFetch(API_ENDPOINTS.AUTH_LOGOUT, { method: 'POST', skipAuthRetry: true });
@@ -76,9 +79,10 @@ export const AuthProvider = ({ children }) => {
     isAuthLoading,
     login,
     register,
+    startDemo,
     logout,
     reloadSession: loadSession,
-  }), [user, isAuthLoading, login, register, logout, loadSession]);
+  }), [user, isAuthLoading, login, register, startDemo, logout, loadSession]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

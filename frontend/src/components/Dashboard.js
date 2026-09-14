@@ -81,6 +81,12 @@ const Dashboard = () => {
     localStorage.setItem(sourceStorageKey, JSON.stringify(sources));
   }, [sources, sourceStorageKey]);
 
+  // Signing out of the shared account first, so they land on a clean sign-up.
+  const handleLeaveDemo = async () => {
+    await logout();
+    navigate('/register');
+  };
+
   const handleLogout = async () => {
     await logout();
     navigate('/login', { replace: true });
@@ -264,8 +270,8 @@ const Dashboard = () => {
             <button 
               className="navbar-upload-btn"
               onClick={() => setShowUploadModal(true)}
-              disabled={sources.length >= MAX_DOCUMENTS}
-              title="Add source"
+              disabled={user.isDemo || sources.length >= MAX_DOCUMENTS}
+              title={user.isDemo ? 'The demo workspace is read only' : 'Add source'}
               aria-label="Add source"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -286,6 +292,16 @@ const Dashboard = () => {
         </div>
       </header>
       
+      {user.isDemo && (
+        <div className="demo-banner" role="status">
+          <span>
+            You are in a shared demo workspace. These documents are read only and
+            chats here are not saved.
+          </span>
+          <button type="button" onClick={handleLeaveDemo}>Create your own workspace</button>
+        </div>
+      )}
+
       <main className="dashboard-main">
         <MainApp 
           sources={sources}

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import SourcesPanel from './SourcesPanel';
 import ChatPanel from './ChatPanel';
 import HistoryPanel from './HistoryPanel';
+import { useAuth } from '../contexts/AuthContext';
 
 function MainApp({ 
   sources, 
@@ -16,6 +17,10 @@ function MainApp({
   showSourcesPanel = true,
   setShowSourcesPanel
 }) {
+  const { user } = useAuth();
+  // Demo chats are never persisted, so a history rail would always be empty.
+  const isDemo = Boolean(user?.isDemo);
+
   const [messages, setMessages] = useState([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [conversations, setConversations] = useState([]);
@@ -23,6 +28,10 @@ function MainApp({
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
 
   const loadConversations = useCallback(async () => {
+    if (isDemo) {
+      setIsHistoryLoading(false);
+      return;
+    }
     try {
       const response = await apiFetch(API_ENDPOINTS.CONVERSATIONS);
       if (!response.ok) return;
@@ -33,7 +42,7 @@ function MainApp({
     } finally {
       setIsHistoryLoading(false);
     }
-  }, []);
+  }, [isDemo]);
 
   useEffect(() => { loadConversations(); }, [loadConversations]);
 
@@ -181,14 +190,14 @@ function MainApp({
   
   return (
     <div className={`main-app-container ${!showSourcesPanel ? 'chat-only' : ''}`}>
-      <HistoryPanel
+      {!isDemo && <HistoryPanel
         conversations={conversations}
         activeId={activeConversationId}
         isLoading={isHistoryLoading}
         onSelect={handleSelectConversation}
         onDelete={handleDeleteConversation}
         onNewChat={handleNewChat}
-      />
+      />}
       {showSourcesPanel && (
         <SourcesPanel 
           sources={sources}

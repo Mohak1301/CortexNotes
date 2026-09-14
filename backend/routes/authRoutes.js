@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   changePassword,
+  demoLogin,
   forgotPassword,
   login,
   logout,
@@ -18,6 +19,7 @@ const sessionLimit = rateLimit({ limit: 120, windowMs: 15 * 60 * 1000, name: 'au
 
 router.post('/register', authLimit, register);
 router.post('/login', authLimit, login);
+router.post('/demo', authLimit, demoLogin);
 router.get('/session', sessionLimit, session);
 router.post('/logout', requireCsrf, logout);
 
