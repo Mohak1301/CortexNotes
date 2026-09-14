@@ -1,0 +1,22 @@
+.word-reveal-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  /* the clip box must extend past the baseline or descenders get shaved */
+  padding-bottom: .14em;
+  margin-bottom: -.14em;
+}
+
+.word-reveal-word > span {
+  display: inline-block;
+  animation: word-rise .78s cubic-bezier(.22, .61, .36, 1) both;
+}
+
+@keyframes word-rise {
+  from { opacity: 0; transform: translateY(0.85em); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word-reveal-word > span { animation: none; }
+}
