@@ -32,6 +32,10 @@ export const API_ENDPOINTS = {
   TEXT_UPLOAD: '/api/text',
   LINK_UPLOAD: '/api/link',
   
+  // Chat history endpoints
+  CONVERSATIONS: '/api/conversations',
+  CONVERSATION: (conversationId) => `/api/conversations/${conversationId}`,
+
   // Sources management endpoints
   DELETE_SOURCE: (sourceId) => `/api/sources/${sourceId}`,
   CLEAR_ALL_SOURCES: '/api/sources',

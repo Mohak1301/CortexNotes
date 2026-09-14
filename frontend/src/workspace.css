@@ -124,6 +124,104 @@
   border-color: rgba(255, 255, 255, .2);
 }
 
+/* ---------- chat history rail ---------- */
+.dashboard .history-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 236px;
+  width: 236px;
+  min-height: 0;
+  background: var(--ws-panel);
+  border-right: 1px solid var(--ws-line-soft);
+}
+.dashboard .history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 14px 14px;
+  border-bottom: 1px solid var(--ws-line-soft);
+}
+.dashboard .history-title {
+  margin: 0;
+  color: var(--ws-fg);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -.015em;
+}
+.dashboard .history-new-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--ws-line);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ws-dim);
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dashboard .history-new-btn:hover { border-color: rgba(255, 255, 255, .18); color: var(--ws-fg); }
+.dashboard .history-list { overflow-y: auto; flex: 1; min-height: 0; padding: 8px; }
+.dashboard .history-empty {
+  margin: 8px 6px;
+  color: var(--ws-dim);
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+.dashboard .history-item {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  border-radius: 9px;
+}
+.dashboard .history-item:hover { background: rgba(255, 255, 255, .04); }
+.dashboard .history-item.is-active { background: rgba(255, 255, 255, .07); }
+.dashboard .history-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+  padding: 8px 4px 8px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+/* A long title must not widen the rail, so it is clipped rather than wrapped. */
+.dashboard .history-item-title {
+  overflow: hidden;
+  color: var(--ws-fg);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dashboard .history-item-when { color: var(--ws-dim); font-size: 9.5px; }
+/* Dimmed rather than hidden. An opacity of 0 still accepts clicks, which makes an
+   invisible hit target: bad to aim at, and worse on touch and with a screen reader. */
+.dashboard .history-item-delete {
+  display: flex;
+  align-items: center;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 0 9px 9px 0;
+  background: transparent;
+  color: var(--ws-dim);
+  cursor: pointer;
+  opacity: .4;
+}
+.dashboard .history-item:hover .history-item-delete { opacity: .75; }
+.dashboard .history-item-delete:hover { color: #e6b2b2; opacity: 1; }
+.dashboard .history-item-main:focus-visible,
+.dashboard .history-item-delete:focus-visible {
+  outline: 1px solid var(--ws-fg);
+  outline-offset: -2px;
+  opacity: 1;
+}
+/* Three columns need room. Below this the rail is dropped rather than squeezed. */
+@media (max-width: 1024px) {
+  .dashboard .history-panel { display: none; }
+}
+
 /* ---------- sources panel ---------- */
 .dashboard .main-app-container,
 .dashboard .main-content,

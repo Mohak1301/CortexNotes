@@ -29,6 +29,17 @@ export const validateText = (text) => {
   return text.trim();
 };
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Conversation ids are interpolated into PostgREST query strings, so anything that
+// is not a uuid is rejected before it can reach one.
+export const validateConversationId = (value) => {
+  if (typeof value !== 'string' || !UUID_PATTERN.test(value)) {
+    throw Object.assign(new Error('Unknown conversation'), { status: 400 });
+  }
+  return value;
+};
+
 export const validateChatMessage = (message) => {
   if (typeof message !== 'string' || !message.trim()) {
     throw Object.assign(new Error('Message is required'), { status: 400 });

@@ -15,6 +15,7 @@ import chatRoutes from "./routes/chatRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import sourcesRoutes from "./routes/sourcesRoutes.js";
 import authRoutes from './routes/authRoutes.js';
+import conversationsRoutes from './routes/conversationsRoutes.js';
 
 assertProductionConfig();
 const app = express();
@@ -63,6 +64,7 @@ app.use('/api', rateLimit({ limit: config.generalRateLimit, name: 'general' }));
 app.use("/api", chatRoutes);
 app.use("/api", uploadRoutes);
 app.use("/api/sources", sourcesRoutes);
+app.use('/api/conversations', conversationsRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

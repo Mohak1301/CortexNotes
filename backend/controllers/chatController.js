@@ -1,7 +1,8 @@
 import { OpenAI } from "openai";
 import 'dotenv/config';
-import { validateChatMessage } from '../utils/validation.js';
+import { validateChatMessage, validateConversationId } from '../utils/validation.js';
 import { getVectorStore } from '../services/vectorStore.js';
+import { appendMessage, createConversation, titleFromMessage } from '../services/chatHistory.js';
 import { buildChatCompletionRequest } from '../services/chatCompletion.js';
 
 const client = new OpenAI();
@@ -49,6 +50,20 @@ export const chat = async (req, res, next) => {
   let streaming = false;
   try {
   const message = validateChatMessage(req.body?.message);
+
+  // A request with no conversation starts one. Both this and the user message are
+  // written before any streaming begins: if storage is down, the caller gets a
+  // clean error instead of an answer that was never saved.
+  const conversation = req.body?.conversationId
+    ? { id: validateConversationId(req.body.conversationId), title: null }
+    : await createConversation(req.accessToken, req.workspaceId, titleFromMessage(message));
+
+  await appendMessage(req.accessToken, {
+    conversationId: conversation.id,
+    userId: req.workspaceId,
+    role: 'user',
+    content: message,
+  });
 
   // Built once per process, so this costs no round trip after the first request.
   const vectorStore = await getVectorStore();
@@ -382,13 +397,43 @@ export const chat = async (req, res, next) => {
     });
     streaming = true;
 
+    // A brand new conversation has an id the caller has never seen, and it needs it
+    // to send the next message into the same thread.
+    res.write(`data: ${JSON.stringify({
+      conversation: { id: conversation.id, title: conversation.title },
+    })}\n\n`);
+
     // Retrieval finished before generation began, so the sources are already known.
     // Sending them first lets the interface show them while the model is still writing.
     res.write(`data: ${JSON.stringify({ sources: toClientSources(citations) })}\n\n`);
 
+    // The answer only exists in full once the stream ends, so it is collected here
+    // and written once. Saving each chunk instead would mean a database write per
+    // token for no benefit.
+    let answer = '';
     for await (const part of stream) {
       const delta = part.choices?.[0]?.delta?.content;
-      if (delta) res.write(`data: ${JSON.stringify({ delta })}\n\n`);
+      if (delta) {
+        answer += delta;
+        res.write(`data: ${JSON.stringify({ delta })}\n\n`);
+      }
+    }
+
+    if (answer) {
+      try {
+        await appendMessage(req.accessToken, {
+          conversationId: conversation.id,
+          userId: req.workspaceId,
+          role: 'assistant',
+          content: answer,
+          sources: toClientSources(citations),
+        });
+      } catch (error) {
+        // The answer is already on the reader's screen. Failing the response now
+        // would replace a delivered answer with an error, so this is logged and
+        // the reply stands - unsaved.
+        console.warn(`[${req.requestId}] answer not persisted: ${error.message}`);
+      }
     }
 
     res.write('data: [DONE]\n\n');
