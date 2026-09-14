@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { getUser } from '../services/supabaseAuth.js';
 import { ACCESS_COOKIE, CSRF_COOKIE, parseCookies } from '../utils/cookies.js';
+import { getCachedUser, setCachedUser } from '../services/userCache.js';
 
 const safeEqual = (left, right) => {
   const a = Buffer.from(left || '');
@@ -16,11 +17,23 @@ export const requireAuth = async (req, res, next) => {
       return res.status(401).json({ error: 'Authentication required', requestId: req.requestId });
     }
 
+    // Supabase is a network hop away, so skip it when this token was checked
+    // moments ago. Logout clears the entry, so a signed-out token stops working
+    // immediately rather than lingering for the cache lifetime.
+    const cached = getCachedUser(accessToken);
+    if (cached) {
+      req.accessToken = accessToken;
+      req.user = cached;
+      req.workspaceId = cached.id;
+      return next();
+    }
+
     const result = await getUser(accessToken);
     if (!result.ok || !result.data?.id) {
       return res.status(401).json({ error: 'Your session has expired', requestId: req.requestId });
     }
 
+    setCachedUser(accessToken, result.data);
     req.accessToken = accessToken;
     req.user = result.data;
     req.workspaceId = result.data.id;

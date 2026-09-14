@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { API_ENDPOINTS } from '../config/api.js';
-import { apiFetch } from '../utils/apiUtils.js';
+import { streamApi } from '../utils/apiUtils.js';
 import toast from 'react-hot-toast';
 import SourcesPanel from './SourcesPanel';
 import ChatPanel from './ChatPanel';
@@ -38,22 +38,33 @@ function MainApp({
     setMessages(prev => [...prev, userMessage]);
     setIsChatLoading(true);
 
-    try {
-      const response = await apiFetch(API_ENDPOINTS.CHAT, {
-        method: 'POST',
-        body: JSON.stringify({ message }),
-      });
+    const assistantId = Date.now() + 1;
 
-      if (response.ok) {
-        const data = await response.json();
-        const assistantMessage = {
-          id: Date.now() + 1,
-          type: 'assistant',
-          content: data.reply,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, assistantMessage]);
-      } else {
+    try {
+      const response = await streamApi(
+        API_ENDPOINTS.CHAT,
+        { method: 'POST', body: JSON.stringify({ message }) },
+        (delta) => {
+          // The first token creates the bubble; the rest append to it.
+          setMessages(prev => {
+            if (!prev.some(item => item.id === assistantId)) {
+              return [...prev, {
+                id: assistantId,
+                type: 'assistant',
+                content: delta,
+                timestamp: new Date()
+              }];
+            }
+            return prev.map(item => (
+              item.id === assistantId ? { ...item, content: item.content + delta } : item
+            ));
+          });
+          // Text is on screen now, so the spinner has done its job.
+          setIsChatLoading(false);
+        },
+      );
+
+      if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         toast.error(errorData.error || 'Failed to send message');
       }

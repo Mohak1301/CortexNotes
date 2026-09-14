@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { getUser, refreshSession, signIn, signOut, signUp } from '../services/supabaseAuth.js';
+import { clearCachedUser } from '../services/userCache.js';
 import {
   ACCESS_COOKIE,
   REFRESH_COOKIE,
@@ -128,7 +129,12 @@ export const logout = async (req, res, next) => {
       const refreshed = await refreshSession(cookies[REFRESH_COOKIE]);
       if (refreshed.ok) accessToken = refreshed.data?.access_token;
     }
-    if (accessToken) await signOut(accessToken);
+    if (accessToken) {
+      // Drop the cached lookup first so the token cannot survive this logout.
+      clearCachedUser(accessToken);
+      await signOut(accessToken);
+    }
+    if (cookies[ACCESS_COOKIE]) clearCachedUser(cookies[ACCESS_COOKIE]);
   } catch {
     // Cookie removal is authoritative for this browser even if remote revocation is unavailable.
   } finally {

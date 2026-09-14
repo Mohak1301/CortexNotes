@@ -1,18 +1,7 @@
-import { OpenAIEmbeddings } from '@langchain/openai';
-import { QdrantVectorStore } from '@langchain/qdrant';
-import { ensureVectorIndexes } from '../services/vectorIndexes.js';
+import { collectionName, getVectorStore } from '../services/vectorStore.js';
 
 const getClient = async () => {
-  const vectorStore = await QdrantVectorStore.fromExistingCollection(
-    new OpenAIEmbeddings({ model: 'text-embedding-3-small' }),
-    {
-      url: process.env.QDRANT_URL || 'http://localhost:6333',
-      collectionName: process.env.QDRANT_COLLECTION_NAME || 'cortex-notes',
-      apiKey: process.env.QDRANT_API_KEY,
-    },
-  );
-  const collectionName = process.env.QDRANT_COLLECTION_NAME || 'cortex-notes';
-  await ensureVectorIndexes(vectorStore.client, collectionName);
+  const vectorStore = await getVectorStore();
   return {
     client: vectorStore.client,
     collectionName,

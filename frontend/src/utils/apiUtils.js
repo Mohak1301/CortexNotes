@@ -61,3 +61,42 @@ export const handleApiResponse = async (response) => {
   }
   return { success: true };
 };
+
+// Reads a text/event-stream response and hands each token to onDelta as it lands,
+// so the UI can render the answer while the model is still writing it.
+export const streamApi = async (endpoint, options, onDelta) => {
+  const response = await apiFetch(endpoint, options);
+  // Errors arrive as normal JSON, so leave the body for the caller to read.
+  if (!response.ok || !response.body) return response;
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    // Events are separated by a blank line. A trailing fragment means the last
+    // event is still arriving, so hold it back until the next read completes it.
+    const events = buffer.split('\n\n');
+    buffer = events.pop() ?? '';
+
+    for (const event of events) {
+      const payload = event.replace(/^data:\s*/, '').trim();
+      if (!payload || payload === '[DONE]') continue;
+
+      let parsed;
+      try {
+        parsed = JSON.parse(payload);
+      } catch {
+        continue;
+      }
+      if (parsed.error) throw new Error(parsed.error);
+      if (parsed.delta) onDelta(parsed.delta);
+    }
+  }
+
+  return response;
+};
