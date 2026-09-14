@@ -139,10 +139,19 @@ const appOrigin = () => config.frontendOrigins[0] || '';
 export const forgotPassword = async (req, res, next) => {
   try {
     const { email } = validateAuthInput({ ...req.body, password: 'placeholder-value' });
-    await requestPasswordReset(email, `${appOrigin()}/reset-password`);
+    const result = await requestPasswordReset(email, `${appOrigin()}/reset-password`);
+
+    // Supabase reports a refused send as a status, not an exception, so checking it
+    // is the only way this ever reaches a log. Returning the same answer to every
+    // caller must not also mean returning no answer to whoever runs the service.
+    if (!result.ok) {
+      console.warn(
+        `[${req.requestId}] Supabase recovery mail rejected: status=${result.status} `
+        + `code=${result.data?.error_code || result.data?.code || 'unknown'} `
+        + `msg=${result.data?.msg || result.data?.message || 'none'}`,
+      );
+    }
   } catch (error) {
-    // A failure here must not be distinguishable from success either, so it is
-    // logged and the same answer goes back.
     if (error.status === 400) return next(error);
     console.warn(`[${req.requestId}] password reset request failed: ${error.message}`);
   }
@@ -203,7 +212,15 @@ export const changePassword = async (req, res, next) => {
 export const resendConfirmation = async (req, res, next) => {
   try {
     const { email } = validateAuthInput({ ...req.body, password: 'placeholder-value' });
-    await resendVerification(email, `${appOrigin()}/login`);
+    const result = await resendVerification(email, `${appOrigin()}/login`);
+
+    if (!result.ok) {
+      console.warn(
+        `[${req.requestId}] Supabase confirmation mail rejected: status=${result.status} `
+        + `code=${result.data?.error_code || result.data?.code || 'unknown'} `
+        + `msg=${result.data?.msg || result.data?.message || 'none'}`,
+      );
+    }
   } catch (error) {
     if (error.status === 400) return next(error);
     console.warn(`[${req.requestId}] confirmation resend failed: ${error.message}`);
