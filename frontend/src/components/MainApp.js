@@ -41,26 +41,40 @@ function MainApp({
     const assistantId = Date.now() + 1;
 
     try {
+      // Sources land before the first token, so whichever event arrives first
+      // creates the bubble and later events update it in place.
+      const updateAssistant = (update) => setMessages(prev => {
+        const existing = prev.find(item => item.id === assistantId);
+        if (!existing) {
+          const blank = {
+            id: assistantId,
+            type: 'assistant',
+            content: '',
+            sources: [],
+            timestamp: new Date()
+          };
+          return [...prev, { ...blank, ...update(blank) }];
+        }
+        return prev.map(item => (
+          item.id === assistantId ? { ...item, ...update(item) } : item
+        ));
+      });
+
       const response = await streamApi(
         API_ENDPOINTS.CHAT,
         { method: 'POST', body: JSON.stringify({ message }) },
-        (delta) => {
-          // The first token creates the bubble; the rest append to it.
-          setMessages(prev => {
-            if (!prev.some(item => item.id === assistantId)) {
-              return [...prev, {
-                id: assistantId,
-                type: 'assistant',
-                content: delta,
-                timestamp: new Date()
-              }];
-            }
-            return prev.map(item => (
-              item.id === assistantId ? { ...item, content: item.content + delta } : item
-            ));
-          });
-          // Text is on screen now, so the spinner has done its job.
-          setIsChatLoading(false);
+        (event) => {
+          if (event.sources) {
+            updateAssistant(() => ({ sources: event.sources }));
+            // The bubble is on screen now and carries its own pending state,
+            // so a second placeholder bubble would only duplicate it.
+            setIsChatLoading(false);
+            return;
+          }
+          if (event.delta) {
+            updateAssistant(item => ({ content: item.content + event.delta }));
+            setIsChatLoading(false);
+          }
         },
       );
 

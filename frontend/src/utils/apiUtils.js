@@ -62,9 +62,11 @@ export const handleApiResponse = async (response) => {
   return { success: true };
 };
 
-// Reads a text/event-stream response and hands each token to onDelta as it lands,
-// so the UI can render the answer while the model is still writing it.
-export const streamApi = async (endpoint, options, onDelta) => {
+// Reads a text/event-stream response and hands each parsed event to onEvent as it
+// lands, so the UI can render while the model is still writing. One handler rather
+// than one callback per event type: the transport stays dumb about what the events
+// mean, and a new event kind needs no change here.
+export const streamApi = async (endpoint, options, onEvent) => {
   const response = await apiFetch(endpoint, options);
   // Errors arrive as normal JSON, so leave the body for the caller to read.
   if (!response.ok || !response.body) return response;
@@ -94,7 +96,7 @@ export const streamApi = async (endpoint, options, onDelta) => {
         continue;
       }
       if (parsed.error) throw new Error(parsed.error);
-      if (parsed.delta) onDelta(parsed.delta);
+      onEvent(parsed);
     }
   }
 

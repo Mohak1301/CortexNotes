@@ -261,6 +261,64 @@
   color: #c2c2c9;
 }
 
+/* citations */
+.dashboard .citation {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  margin: 0 1px 0 2px;
+  padding: 0 3px;
+  border: 1px solid var(--ws-line);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, .07);
+  color: var(--ws-fg);
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: super;
+  cursor: help;
+}
+.dashboard .message-sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.dashboard .sources-label {
+  color: var(--ws-dim);
+  font-size: 9px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.dashboard .source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 3px 8px;
+  border: 1px solid var(--ws-line-soft);
+  border-radius: 999px;
+  background: var(--ws-panel);
+  color: var(--ws-dim);
+  font-size: 10px;
+  cursor: help;
+}
+.dashboard .source-chip-n {
+  color: var(--ws-fg);
+  font-weight: 600;
+}
+/* Long filenames must not push the chip past the message width. */
+.dashboard .source-chip-label {
+  overflow: hidden;
+  max-width: 220px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dashboard .source-chip-page { opacity: .72; }
+
 /* composer */
 .dashboard .chat-input-container {
   padding: 16px 24px 20px;

@@ -1,5 +1,41 @@
 import React, { useState, useRef, useEffect } from 'react';
 
+const CITATION_PATTERN = /\[(\d+)\]/g;
+
+// The answer streams in as plain text carrying [n] markers. Splitting on them lets
+// each marker become a control tied to its source while the prose stays untouched.
+// A marker with no matching source is left as literal text: the model can invent a
+// number, and inventing a chip for it would be worse than showing nothing.
+const renderAnswer = (content, sources = []) => {
+  const parts = [];
+  let cursor = 0;
+  let match;
+
+  CITATION_PATTERN.lastIndex = 0;
+  while ((match = CITATION_PATTERN.exec(content)) !== null) {
+    if (match.index > cursor) parts.push(content.slice(cursor, match.index));
+
+    const number = Number(match[1]);
+    const source = sources.find((item) => item.n === number);
+    parts.push(source
+      ? (
+        <sup
+          key={`cite-${number}-${match.index}`}
+          className="citation"
+          title={`${source.label}${source.page ? ` - page ${source.page}` : ''}`}
+        >
+          {number}
+        </sup>
+      )
+      : match[0]);
+
+    cursor = match.index + match[0].length;
+  }
+
+  if (cursor < content.length) parts.push(content.slice(cursor));
+  return parts;
+};
+
 const ChatPanel = ({ messages, onSendMessage, isLoading, sourcesCount }) => {
   const [inputValue, setInputValue] = useState('');
   const [isMobile, setIsMobile] = useState(false);
@@ -99,8 +135,29 @@ const ChatPanel = ({ messages, onSendMessage, isLoading, sourcesCount }) => {
               <div key={message.id} className={`message message-${message.type}`}>
                 <div className="message-author">{message.type === 'user' ? 'You' : 'CortexNotes'}</div>
                 <div className="message-content">
-                  {message.content}
+                  {message.type === 'assistant' && !message.content ? (
+                    <span role="status" aria-live="polite">
+                      <span className="visually-hidden">Writing…</span>
+                      <span className="thinking-dots" aria-hidden="true"><i /><i /><i /></span>
+                    </span>
+                  ) : message.type === 'assistant' ? (
+                    renderAnswer(message.content, message.sources)
+                  ) : (
+                    message.content
+                  )}
                 </div>
+                {message.sources?.length > 0 && (
+                  <div className="message-sources">
+                    <span className="sources-label">Sources</span>
+                    {message.sources.map((source) => (
+                      <span key={source.n} className="source-chip" title={source.snippet}>
+                        <span className="source-chip-n">{source.n}</span>
+                        <span className="source-chip-label">{source.label}</span>
+                        {source.page ? <span className="source-chip-page">p.{source.page}</span> : null}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
             {isLoading && (
