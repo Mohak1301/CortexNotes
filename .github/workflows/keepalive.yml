@@ -1,0 +1,56 @@
+# Free tiers expire from disuse: Render sleeps, Supabase pauses after a week,
+# and a Qdrant free cluster is deleted outright. Scheduled traffic prevents all three.
+name: Keep free tiers alive
+
+on:
+  schedule:
+    # Every 10 minutes, 02:00-18:59 UTC (07:30-00:29 IST). Leaving the service
+    # asleep overnight keeps the monthly instance-hour budget within limits.
+    - cron: '*/10 2-18 * * *'
+    # Every 6 hours for the two services that only need occasional traffic.
+    - cron: '0 */6 * * *'
+  # Lets you trigger a run by hand from the Actions tab.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    name: Wake the API
+    if: github.event.schedule != '0 */6 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: |
+          # A sleeping instance takes up to a minute to boot, so allow for that.
+          # This step never fails the run: a missed warm-up is not worth an alert.
+          status=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 \
+            https://cortexnotes-1.onrender.com/health || echo "no-response")
+          echo "API health: $status"
+
+  stores:
+    name: Touch Qdrant and Supabase
+    if: github.event.schedule != '*/10 2-18 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Qdrant
+        env:
+          QDRANT_URL: ${{ secrets.QDRANT_URL }}
+          QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
+        run: |
+          # Fails the run on purpose. A dead cluster means the data is gone,
+          # which is worth an email rather than a quiet log line.
+          curl -sS --fail --max-time 30 -o /dev/null \
+            -H "api-key: $QDRANT_API_KEY" "$QDRANT_URL/collections"
+          echo "Qdrant responded"
+
+      - name: Ping Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          # The health route still requires the apikey header; without it, 401.
+          curl -sS --fail --max-time 30 -o /dev/null \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" "$SUPABASE_URL/auth/v1/health"
+          echo "Supabase responded"
