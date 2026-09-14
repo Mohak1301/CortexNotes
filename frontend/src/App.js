@@ -5,6 +5,7 @@ import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
 import AuthPage from './components/AuthPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import PasswordResetPage from './components/PasswordResetPage';
 import { AuthProvider } from './contexts/AuthContext';
 import './App.css';
 import './transitions.css';
@@ -20,6 +21,8 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<AuthPage mode="login" />} />
             <Route path="/register" element={<AuthPage mode="register" />} />
+            <Route path="/forgot-password" element={<PasswordResetPage mode="request" />} />
+            <Route path="/reset-password" element={<PasswordResetPage mode="reset" />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

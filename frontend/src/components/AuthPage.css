@@ -172,3 +172,16 @@
 @media (prefers-reduced-motion: reduce) {
   .auth-form input, .auth-submit, .auth-primary-link { transition: none; }
 }
+
+
+/* A link-shaped control, for actions that sit inside a sentence. */
+.auth-inline-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.auth-inline-btn:hover { opacity: .8; }

@@ -24,6 +24,10 @@ export const API_ENDPOINTS = {
   AUTH_LOGIN: '/api/auth/login',
   AUTH_LOGOUT: '/api/auth/logout',
   AUTH_SESSION: '/api/auth/session',
+  AUTH_FORGOT_PASSWORD: '/api/auth/forgot-password',
+  AUTH_RECOVER_SESSION: '/api/auth/recover-session',
+  AUTH_PASSWORD: '/api/auth/password',
+  AUTH_RESEND_CONFIRMATION: '/api/auth/resend-confirmation',
   // Chat endpoints
   CHAT: '/api/chat',
   

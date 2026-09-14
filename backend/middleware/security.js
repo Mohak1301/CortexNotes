@@ -60,5 +60,13 @@ export const errorHandler = (error, req, res, _next) => {
   if (!expected) console.error(`[${req.requestId}]`, error);
 
   const message = expected ? error.message : 'The server could not complete the request';
-  res.status(status).json({ error: message, requestId: req.requestId });
+
+  // Expected errors are ones this app threw itself, so their code is safe to pass
+  // on and lets the interface react - offering to resend a confirmation, say.
+  // Unexpected errors keep their code to themselves.
+  res.status(status).json({
+    error: message,
+    ...(expected && error.code ? { code: error.code } : {}),
+    requestId: req.requestId,
+  });
 };

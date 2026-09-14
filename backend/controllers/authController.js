@@ -1,5 +1,15 @@
 import crypto from 'crypto';
-import { getUser, refreshSession, signIn, signOut, signUp } from '../services/supabaseAuth.js';
+import {
+  getUser,
+  refreshSession,
+  requestPasswordReset,
+  resendVerification,
+  signIn,
+  signOut,
+  signUp,
+  updatePassword,
+} from '../services/supabaseAuth.js';
+import { config } from '../config.js';
 import { clearCachedUser } from '../services/userCache.js';
 import {
   ACCESS_COOKIE,
@@ -47,6 +57,7 @@ const AUTH_ERROR_MESSAGES = {
   captcha_failed: 'CAPTCHA verification failed. Check the Supabase CAPTCHA configuration.',
   email_address_invalid: 'Enter a deliverable email address.',
   email_address_not_authorized: 'Supabase is not authorized to send email to this address. Configure custom SMTP or use an authorized team email.',
+  email_not_confirmed: 'Confirm your email address before signing in. Check your inbox for the link.',
   email_provider_disabled: 'Email registration is disabled for this project.',
   over_email_send_rate_limit: 'Too many confirmation emails were requested. Please wait before trying again.',
   over_request_rate_limit: 'Too many authentication attempts. Please try again later.',
@@ -119,6 +130,86 @@ export const session = async (req, res, next) => {
     }
     res.json({ user: publicUser(userResult.data), csrfToken });
   } catch (error) { next(error); }
+};
+
+// The address the reset link returns to. Supabase only honours URLs on its own
+// redirect allow list, so this has to match what is configured there.
+const appOrigin = () => config.frontendOrigins[0] || '';
+
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = validateAuthInput({ ...req.body, password: 'placeholder-value' });
+    await requestPasswordReset(email, `${appOrigin()}/reset-password`);
+  } catch (error) {
+    // A failure here must not be distinguishable from success either, so it is
+    // logged and the same answer goes back.
+    if (error.status === 400) return next(error);
+    console.warn(`[${req.requestId}] password reset request failed: ${error.message}`);
+  }
+
+  // Always the same response. Saying "no account with that email" would turn this
+  // endpoint into a way to test which addresses are registered.
+  res.json({ message: 'If that address has an account, a reset link is on its way.' });
+};
+
+// The recovery link hands the browser a session in the URL fragment. This swaps it
+// for the same HttpOnly cookies every other sign-in uses, so the rest of the app
+// needs no special case for a user who arrived this way.
+export const recoverSession = async (req, res, next) => {
+  try {
+    const accessToken = typeof req.body?.accessToken === 'string' ? req.body.accessToken : '';
+    const refreshToken = typeof req.body?.refreshToken === 'string' ? req.body.refreshToken : '';
+    if (!accessToken || !refreshToken) {
+      throw Object.assign(new Error('That reset link is incomplete'), { status: 400 });
+    }
+
+    // Never trust the token because it arrived: ask Supabase who it belongs to.
+    const result = await getUser(accessToken);
+    if (!result.ok || !result.data?.id) {
+      throw Object.assign(
+        new Error('That reset link has expired. Request a new one.'),
+        { status: 401 },
+      );
+    }
+
+    const csrfToken = issueSession(res, {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_in: 3600,
+    });
+    res.json({ user: publicUser(result.data), csrfToken });
+  } catch (error) { next(error); }
+};
+
+// Requires a signed-in session, which covers both a recovery link and a user
+// changing their password from inside the app.
+export const changePassword = async (req, res, next) => {
+  try {
+    const { password } = validateAuthInput({
+      email: req.user?.email,
+      password: req.body?.password,
+      requireStrongPassword: true,
+    });
+
+    const result = await updatePassword(req.accessToken, password);
+    if (!result.ok) {
+      throw toAuthError(result, 'That password could not be saved', 'password change', req.requestId);
+    }
+
+    res.json({ message: 'Password updated. Use it next time you sign in.' });
+  } catch (error) { next(error); }
+};
+
+export const resendConfirmation = async (req, res, next) => {
+  try {
+    const { email } = validateAuthInput({ ...req.body, password: 'placeholder-value' });
+    await resendVerification(email, `${appOrigin()}/login`);
+  } catch (error) {
+    if (error.status === 400) return next(error);
+    console.warn(`[${req.requestId}] confirmation resend failed: ${error.message}`);
+  }
+
+  res.json({ message: 'If that address needs confirming, a new link is on its way.' });
 };
 
 export const logout = async (req, res, next) => {

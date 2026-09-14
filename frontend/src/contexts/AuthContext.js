@@ -41,7 +41,12 @@ export const AuthProvider = ({ children }) => {
       skipAuthRetry: true,
     });
     const data = await readJson(response);
-    if (!response.ok) throw new Error(data.error || 'Authentication could not be completed');
+    if (!response.ok) {
+      const failure = new Error(data.error || 'Authentication could not be completed');
+      // Lets a page distinguish "wrong password" from "email not confirmed yet".
+      failure.code = data.code || '';
+      throw failure;
+    }
     if (data.csrfToken) setCsrfToken(data.csrfToken);
     if (data.user) setUser(data.user);
     return data;
