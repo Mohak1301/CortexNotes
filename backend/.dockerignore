@@ -1,0 +1,23 @@
+# Dependencies are installed inside the image.
+node_modules
+npm-debug.log*
+
+# Secrets must never reach an image layer.
+.env
+.env.*
+!env.example
+
+# Local scratch and test material.
+temp
+test
+*.pdf
+
+# Git and Docker metadata.
+.git
+.gitignore
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Docs.
+*.md
