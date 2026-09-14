@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { API_ENDPOINTS } from '../config/api.js';
 import { apiFetch } from '../utils/apiUtils.js';
 import toast from 'react-hot-toast';
+import ConfirmDialog from './ui/ConfirmDialog';
 
 const SourcesPanel = ({ sources, onFileUpload, isLoading, onSourceDeleted, onSourcesCleared, maxDocuments = 4, currentCount = 0 }) => {
   const fileInputRef = useRef(null);
@@ -12,6 +13,7 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading, onSourceDeleted, onSou
   const [isTextUploading, setIsTextUploading] = useState(false);
   const [isUrlUploading, setIsUrlUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirm, setConfirm] = useState(null);
 
   const isLimitReached = currentCount >= maxDocuments;
 
@@ -71,36 +73,37 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading, onSourceDeleted, onSou
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleDeleteSource = async (sourceId) => {
-    if (!window.confirm('Are you sure you want to delete this source? This will also remove its embeddings from the vector database.')) {
-      return;
-    }
-
+  const runConfirmedAction = async (action, failureMessage) => {
     try {
       setIsDeleting(true);
-      await onSourceDeleted(sourceId);
+      await action();
+      setConfirm(null);
     } catch (error) {
-      console.error('Delete error:', error);
-      toast.error('Failed to delete source');
+      console.error(failureMessage, error);
+      toast.error(failureMessage);
+      setConfirm(null);
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const handleClearAllSources = async () => {
-    if (!window.confirm('Are you sure you want to delete ALL sources? This will also remove all embeddings from the vector database. This action cannot be undone.')) {
-      return;
-    }
+  const handleDeleteSource = (sourceId) => {
+    const source = sources.find((item) => item.id === sourceId);
+    setConfirm({
+      title: 'Delete this source?',
+      body: `${source ? `“${source.name}” will be removed` : 'This source will be removed'} from your workspace, along with its embeddings in the vector database.`,
+      confirmLabel: 'Delete source',
+      onConfirm: () => runConfirmedAction(() => onSourceDeleted(sourceId), 'Failed to delete source'),
+    });
+  };
 
-    try {
-      setIsDeleting(true);
-      await onSourcesCleared();
-    } catch (error) {
-      console.error('Clear all error:', error);
-      toast.error('Failed to clear sources');
-    } finally {
-      setIsDeleting(false);
-    }
+  const handleClearAllSources = () => {
+    setConfirm({
+      title: 'Clear all sources?',
+      body: `All ${sources.length} source${sources.length === 1 ? '' : 's'} and their embeddings will be deleted. This cannot be undone.`,
+      confirmLabel: 'Clear all',
+      onConfirm: () => runConfirmedAction(onSourcesCleared, 'Failed to clear sources'),
+    });
   };
 
   const handleTextSubmit = async () => {
@@ -175,6 +178,15 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading, onSourceDeleted, onSou
 
   return (
     <div className="sources-panel">
+      <ConfirmDialog
+        open={Boolean(confirm)}
+        title={confirm?.title}
+        body={confirm?.body}
+        confirmLabel={confirm?.confirmLabel}
+        busy={isDeleting}
+        onConfirm={() => confirm?.onConfirm()}
+        onCancel={() => setConfirm(null)}
+      />
       <div className="sources-header">
         <div className="sources-title-section">
           <h2 className="sources-title">Sources</h2>

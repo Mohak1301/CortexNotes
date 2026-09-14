@@ -51,11 +51,11 @@ body {
 
 button, input, textarea { font: inherit; }
 button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible {
-  outline: 2px solid #ff7ca9;
+  outline: 2px solid rgba(255, 255, 255, .55);
   outline-offset: 3px;
 }
 
-::selection { background: rgba(255, 107, 157, .28); color: white; }
+::selection { background: rgba(255, 255, 255, .2); color: #fff; }
 
 /* Production workspace refinements */
 .main-app-container { background: var(--surface-0); }

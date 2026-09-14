@@ -40,6 +40,10 @@
 .dashboard .brand-mark {
   width: 22px;
   height: 22px;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  line-height: 1;
   border-radius: 7px;
   background: var(--ws-fg);
   color: #0a0a0c;
@@ -412,4 +416,200 @@
   color: #0a0a0c;
 }
 .dashboard .mobile-btn-primary:hover { background: #fff; border-color: #fff; color: #0a0a0c; }
-.dashboard .mobile-btn-primary:disabled { background: transparent; border-color: var(--ws-line); color: var(--ws-dim); }
+
+/* ---------- upload modal (mobile sheet) ---------- */
+.dashboard .mobile-modal-overlay { background: rgba(4, 4, 6, .78); }
+.dashboard .mobile-modal-content { box-shadow: 0 -20px 60px rgba(0, 0, 0, .55); }
+.dashboard .mobile-modal-close:hover { color: var(--ws-fg); background: rgba(255, 255, 255, .06); }
+.dashboard .mobile-modal-body { padding: 4px 16px 16px; }
+.dashboard .mobile-source-types { gap: 7px; }
+.dashboard .mobile-source-type-box {
+  padding: 12px;
+  border: 1px solid var(--ws-line-soft);
+  border-radius: 10px;
+  background: transparent;
+  backdrop-filter: none;
+}
+.dashboard .mobile-source-type-box:hover,
+.dashboard .mobile-source-type-box:active {
+  background: rgba(255, 255, 255, .05);
+  border-color: rgba(255, 255, 255, .18);
+  box-shadow: none;
+  transform: none;
+}
+.dashboard .mobile-source-type-icon {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ws-line-soft);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ws-muted);
+}
+.dashboard .mobile-source-type-icon svg { width: 15px; height: 15px; }
+.dashboard .mobile-source-type-content h4 { font-size: 12.5px; font-weight: 550; color: #dededf; }
+.dashboard .mobile-source-type-content p { font-size: 11px; color: var(--ws-dim); }
+
+.dashboard .mobile-text-input,
+.dashboard .mobile-url-input {
+  border: 1px solid var(--ws-line);
+  border-radius: 10px;
+  background: #0a0a0c;
+  color: var(--ws-fg);
+  font-size: 13px;
+  backdrop-filter: none;
+}
+.dashboard .mobile-text-input::placeholder,
+.dashboard .mobile-url-input::placeholder { color: var(--ws-dim); }
+.dashboard .mobile-text-input:focus,
+.dashboard .mobile-url-input:focus {
+  border-color: rgba(255, 255, 255, .3);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, .05);
+}
+.dashboard .mobile-loading-spinner { border-color: var(--ws-line); border-top-color: var(--ws-fg); }
+
+/* ---------- desktop text / url modals ---------- */
+.dashboard .modal-overlay { background: rgba(4, 4, 6, .74); }
+.dashboard .modal-close:hover { color: var(--ws-fg); background: rgba(255, 255, 255, .06); }
+.dashboard .btn {
+  border: 1px solid var(--ws-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ws-muted);
+  box-shadow: none;
+}
+.dashboard .btn:hover {
+  background: rgba(255, 255, 255, .05);
+  border-color: rgba(255, 255, 255, .2);
+  color: var(--ws-fg);
+  box-shadow: none;
+  transform: none;
+}
+/* after .btn so the primary variant keeps its solid fill */
+.dashboard .btn-primary { background: var(--ws-fg); border-color: var(--ws-fg); color: #0a0a0c; }
+.dashboard .btn-primary:hover { background: #fff; border-color: #fff; color: #0a0a0c; }
+
+.dashboard .text-input,
+.dashboard .url-input {
+  border: 1px solid var(--ws-line);
+  border-radius: 10px;
+  background: #0a0a0c;
+  color: var(--ws-fg);
+}
+.dashboard .text-input::placeholder,
+.dashboard .url-input::placeholder { color: var(--ws-dim); }
+.dashboard .text-input:focus,
+.dashboard .url-input:focus {
+  border-color: rgba(255, 255, 255, .3);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, .05);
+}
+
+/* ---------- drag & drop ---------- */
+.dashboard .file-upload-area:hover,
+.dashboard .file-upload-area.dragover,
+.dashboard .source-type-box.dragover {
+  border-color: rgba(255, 255, 255, .28);
+  background: rgba(255, 255, 255, .05);
+  box-shadow: none;
+}
+.dashboard .upload-btn:focus { border-color: rgba(255, 255, 255, .3); box-shadow: 0 0 0 3px rgba(255, 255, 255, .05); }
+
+/* ---------- thinking indicator ---------- */
+.dashboard .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.dashboard .message-content.is-thinking {
+  width: fit-content;
+  max-width: none;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+}
+.dashboard .thinking-dots { display: flex; align-items: center; gap: 5px; }
+.dashboard .thinking-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ws-muted);
+  animation: ws-thinking 1.25s ease-in-out infinite;
+}
+.dashboard .thinking-dots i:nth-child(2) { animation-delay: .16s; }
+.dashboard .thinking-dots i:nth-child(3) { animation-delay: .32s; }
+
+@keyframes ws-thinking {
+  0%, 60%, 100% { opacity: .28; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard .thinking-dots i { animation: none; opacity: .6; }
+}
+
+/* ---------- in-button spinners ---------- */
+/*
+ * .loading-spinner is a 40px page-level spinner; dropped inside a button it
+ * overflowed and read as a grey blob. Size it down in that context.
+ */
+.dashboard .btn .loading-spinner,
+.dashboard .mobile-btn .loading-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(10, 10, 12, .28);
+  border-top-color: #0a0a0c;
+  margin: 0 8px 0 0;
+  flex: none;
+}
+.dashboard .btn,
+.dashboard .mobile-btn { display: inline-flex; align-items: center; justify-content: center; }
+
+/* a busy primary button stays solid and readable rather than fading to grey */
+.dashboard .btn-primary:disabled,
+.dashboard .mobile-btn-primary:disabled {
+  background: rgba(255, 255, 255, .16);
+  border-color: transparent;
+  color: var(--ws-muted);
+  opacity: 1;
+}
+.dashboard .btn-primary:disabled .loading-spinner,
+.dashboard .mobile-btn-primary:disabled .loading-spinner {
+  border-color: rgba(255, 255, 255, .25);
+  border-top-color: var(--ws-fg);
+}
+
+/* ---------- confirm dialog ---------- */
+.dashboard .confirm-dialog { max-width: 400px; }
+.dashboard .confirm-dialog .modal-header { border-bottom: 0; padding-bottom: 4px; }
+.dashboard .confirm-dialog .modal-header h3 { font-size: 15px; font-weight: 600; letter-spacing: -.022em; }
+.dashboard .confirm-dialog .modal-body { padding-top: 6px; }
+.dashboard .confirm-body { margin: 0; color: var(--ws-muted); font-size: 13px; line-height: 1.6; }
+.dashboard .confirm-dialog .modal-footer { border-top: 0; padding-top: 18px; }
+
+.dashboard .btn-danger {
+  background: rgba(232, 112, 122, .14);
+  border-color: rgba(232, 112, 122, .38);
+  color: #f08b93;
+  font-weight: 550;
+}
+.dashboard .btn-danger:hover {
+  background: rgba(232, 112, 122, .24);
+  border-color: rgba(232, 112, 122, .55);
+  color: #f4a0a7;
+}
+.dashboard .btn-danger:disabled {
+  background: rgba(232, 112, 122, .09);
+  border-color: rgba(232, 112, 122, .2);
+  color: rgba(240, 139, 147, .6);
+  opacity: 1;
+}
+.dashboard .btn-danger .loading-spinner {
+  border-color: rgba(240, 139, 147, .3);
+  border-top-color: #f08b93;
+}

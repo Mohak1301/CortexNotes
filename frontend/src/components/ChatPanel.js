@@ -105,15 +105,10 @@ const ChatPanel = ({ messages, onSendMessage, isLoading, sourcesCount }) => {
             ))}
             {isLoading && (
               <div className="message message-assistant">
-                <div className="message-content">
-                  <div className="loading">
-                    <span>Thinking...</span>
-                    <div className="loading-dots">
-                      <div className="loading-dot"></div>
-                      <div className="loading-dot"></div>
-                      <div className="loading-dot"></div>
-                    </div>
-                  </div>
+                <div className="message-author">CortexNotes</div>
+                <div className="message-content is-thinking" role="status" aria-live="polite">
+                  <span className="visually-hidden">Thinking…</span>
+                  <span className="thinking-dots" aria-hidden="true"><i /><i /><i /></span>
                 </div>
               </div>
             )}
