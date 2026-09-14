@@ -36,7 +36,51 @@ const renderAnswer = (content, sources = []) => {
   return parts;
 };
 
-const ChatPanel = ({ messages, onSendMessage, isLoading, sourcesCount }) => {
+// A long filename in the middle of a question reads badly and wraps the button.
+const shorten = (name = '', limit = 34) => (
+  name.length > limit ? `${name.slice(0, limit - 1)}…` : name
+);
+
+// Naming the actual documents beats a generic prompt: "Summarise report.pdf" tells
+// a first-time visitor what this thing does, where "Summarize the key ideas" could
+// be any chatbot. Built from the source list rather than asked of the model, so it
+// costs nothing and appears instantly.
+const buildSuggestions = (sources = []) => {
+  if (sources.length === 0) {
+    return [
+      'Summarise the key ideas',
+      'What evidence supports the main argument?',
+      'List the most important takeaways',
+    ];
+  }
+
+  const [first, second] = sources;
+  const firstName = shorten(first.name);
+
+  if (sources.length === 1) {
+    return [
+      `Summarise ${firstName}`,
+      `What are the main takeaways from ${firstName}?`,
+      'What evidence is given for the central claim?',
+    ];
+  }
+
+  // Pasted text and web sources are named by date and host, so two of them can
+  // carry the same label. Asking someone to compare a document with itself reads
+  // as a bug, so that prompt only appears when the names actually differ.
+  const secondName = shorten(second.name);
+  const namesDiffer = secondName !== firstName;
+
+  return [
+    `Summarise ${firstName}`,
+    namesDiffer
+      ? `What do ${firstName} and ${secondName} say differently?`
+      : 'Where do these sources disagree?',
+    'What themes run across all of these sources?',
+  ];
+};
+
+const ChatPanel = ({ messages, onSendMessage, isLoading, sourcesCount, sources = [] }) => {
   const [inputValue, setInputValue] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const textareaRef = useRef(null);
@@ -88,11 +132,7 @@ const ChatPanel = ({ messages, onSendMessage, isLoading, sourcesCount }) => {
     }
   };
 
-  const suggestions = [
-    'Summarize the key ideas',
-    'What evidence supports the main argument?',
-    'List the most important takeaways',
-  ];
+  const suggestions = buildSuggestions(sources);
 
   return (
     <section className="main-content" aria-label="Document conversation">

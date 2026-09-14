@@ -226,6 +226,7 @@ function MainApp({
         onSendMessage={handleSendMessage}
         isLoading={isChatLoading}
         sourcesCount={sources.length}
+        sources={sources}
       />
       
     </div>
