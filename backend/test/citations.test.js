@@ -5,15 +5,15 @@ import { buildCitations, toClientSources, toPromptContext } from '../controllers
 const docs = [
   {
     pageContent: 'Vector search returns nearest neighbours.',
-    metadata: { sourceId: 'src-1', documentType: 'pdf', originalFilename: 'notes.pdf', loc: { pageNumber: 7 } },
+    metadata: { sourceId: 'src-1', documentType: 'pdf', sourceName: 'notes.pdf', originalFilename: 'notes.pdf', loc: { pageNumber: 7 } },
   },
   {
     pageContent: 'x'.repeat(500),
-    metadata: { sourceId: 'src-2', documentType: 'url', sourceUrl: 'https://example.com/post' },
+    metadata: { sourceId: 'src-2', documentType: 'url', sourceName: 'Website: example.com', sourceUrl: 'https://example.com/post' },
   },
   {
     pageContent: 'Pasted text with no title.',
-    metadata: { sourceId: 'src-3', documentType: 'text' },
+    metadata: { sourceId: 'src-3', documentType: 'text', sourceName: 'Text Document 9/15/2026' },
   },
 ];
 
@@ -30,12 +30,22 @@ test('the number the model is given matches the number the browser renders', () 
   assert.equal(prompt[1].label, client[1].label);
 });
 
-test('labels fall back from filename to url to a placeholder', () => {
+test('labels match what the sources panel shows, for every source type', () => {
   const [pdf, url, text] = toClientSources(buildCitations(docs));
 
+  // A chip that disagrees with the sources list is worse than no chip: the reader
+  // cannot tell which document was actually used.
   assert.equal(pdf.label, 'notes.pdf');
-  assert.equal(url.label, 'https://example.com/post');
-  assert.equal(text.label, 'Untitled source');
+  assert.equal(url.label, 'Website: example.com');
+  assert.equal(text.label, 'Text Document 9/15/2026');
+});
+
+test('a source with no name at all still gets a usable label', () => {
+  const [bare] = toClientSources(buildCitations([
+    { pageContent: 'orphan chunk', metadata: { sourceId: 'src-9', documentType: 'text' } },
+  ]));
+
+  assert.equal(bare.label, 'Untitled source');
 });
 
 test('prompt context drops metadata the model cannot use', () => {

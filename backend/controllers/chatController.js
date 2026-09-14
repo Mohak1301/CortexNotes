@@ -19,7 +19,13 @@ export const buildCitations = (docs) => docs.map((doc, index) => {
     n: index + 1,
     sourceId: metadata.sourceId,
     type: metadata.documentType,
-    label: metadata.originalFilename || metadata.sourceUrl || 'Untitled source',
+    // sourceName is what every loader sets and what the sources panel displays, so
+    // it comes first. Without it, pasted text and web pages reached the model as
+    // "Untitled source" and it could not match them to what the reader had asked about.
+    label: metadata.sourceName
+      || metadata.originalFilename
+      || metadata.sourceUrl
+      || 'Untitled source',
     page: metadata.loc?.pageNumber,
     content: doc.pageContent,
   };
