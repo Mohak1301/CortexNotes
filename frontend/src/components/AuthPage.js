@@ -45,14 +45,12 @@ const AuthPage = ({ mode }) => {
         {confirmationSent ? (
           <div className="auth-confirmation">
             <div className="auth-success-icon">✓</div>
-            <span className="auth-kicker">ONE MORE STEP</span>
             <h1 id="auth-title">Check your inbox</h1>
             <p>We sent a confirmation link to <strong>{form.email}</strong>. Confirm your email, then sign in.</p>
             <Link className="auth-primary-link" to="/login">Continue to sign in</Link>
           </div>
         ) : (
           <>
-            <span className="auth-kicker">{isRegister ? 'CREATE YOUR WORKSPACE' : 'WELCOME BACK'}</span>
             <h1 id="auth-title">{isRegister ? 'Start researching clearly.' : 'Sign in to CortexNotes.'}</h1>
             <p className="auth-intro">{isRegister ? 'Your sources and conversations stay isolated in your account.' : 'Continue working with your private research sources.'}</p>
             <form className="auth-form" onSubmit={submit}>
