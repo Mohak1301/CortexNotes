@@ -9,6 +9,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import './App.css';
 import './transitions.css';
 import './production.css';
+import './workspace.css';
 
 function App() {
   return (

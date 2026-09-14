@@ -238,38 +238,42 @@ const Dashboard = () => {
                     setShowSourcesPanel(true);
                   }
                 }}
-                title="Show Sources"
+                title="Show sources"
+                aria-label="Show sources"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14,2 14,8 20,8" />
                 </svg>
-                Sources
+                <span className="btn-label">Sources</span>
               </button>
             )}
             {sources.length > 0 && showSourcesPanel && (
               <button 
                 className="navbar-toggle-btn"
                 onClick={() => setShowSourcesPanel(false)}
-                title="Hide Sources"
+                title="Focus mode"
+                aria-label="Focus mode"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                Focus mode
+                <span className="btn-label">Focus mode</span>
               </button>
             )}
             <button 
               className="navbar-upload-btn"
               onClick={() => setShowUploadModal(true)}
               disabled={sources.length >= MAX_DOCUMENTS}
+              title="Add source"
+              aria-label="Add source"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7,10 12,15 17,10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              Add source
+              <span className="btn-label">Add source</span>
             </button>
             <div className="account-summary" title={user.email}>
               <span className="account-avatar">{user.name?.charAt(0).toUpperCase()}</span>

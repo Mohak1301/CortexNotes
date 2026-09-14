@@ -1,0 +1,415 @@
+/*
+ * Monochrome workspace theme.
+ *
+ * Everything here is scoped under `.dashboard` so it only restyles the
+ * signed-in workspace, leaving the auth pages on the older palette until
+ * they are converted too. Selectors are two-class deep on purpose: that
+ * outranks the single-class rules in App.css regardless of import order.
+ */
+
+.dashboard {
+  --ws-ink: #08080a;
+  --ws-panel: #101013;
+  --ws-raised: #17171b;
+  --ws-line: rgba(255, 255, 255, .085);
+  --ws-line-soft: rgba(255, 255, 255, .05);
+  --ws-fg: #fafafa;
+  --ws-muted: #8d8d95;
+  --ws-dim: #5d5d66;
+  --ws-danger: #e8707a;
+
+  background: var(--ws-ink);
+}
+
+.dashboard ::selection { background: rgba(255, 255, 255, .2); color: #fff; }
+.dashboard button:focus-visible,
+.dashboard input:focus-visible,
+.dashboard textarea:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, .55);
+  outline-offset: 2px;
+}
+
+/* ---------- header ---------- */
+.dashboard .dashboard-header {
+  padding: 11px 0;
+  background: rgba(8, 8, 10, .92);
+  border-bottom: 1px solid var(--ws-line-soft);
+}
+.dashboard .dashboard-header-content { padding: 0 18px; }
+.dashboard .dashboard-title h1 { font-size: 14.5px; font-weight: 600; letter-spacing: -.022em; color: var(--ws-fg); }
+.dashboard .brand-mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: var(--ws-fg);
+  color: #0a0a0c;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: none;
+}
+.dashboard .workspace-badge {
+  padding: 3px 7px;
+  border: 1px solid var(--ws-line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ws-dim);
+  font-size: 8px;
+  letter-spacing: .1em;
+}
+.dashboard .user-info { margin: 5px 0 0 31px; color: var(--ws-dim); font-size: 11px; }
+
+/* ---------- header buttons ---------- */
+.dashboard .navbar-upload-btn,
+.dashboard .navbar-toggle-btn {
+  min-height: 32px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -.01em;
+  box-shadow: none;
+  backdrop-filter: none;
+  transition: background .18s ease, border-color .18s ease, color .18s ease;
+}
+.dashboard .navbar-upload-btn {
+  background: var(--ws-fg);
+  border: 1px solid var(--ws-fg);
+  color: #0a0a0c;
+}
+.dashboard .navbar-upload-btn:hover { background: #fff; border-color: #fff; box-shadow: none; transform: none; }
+.dashboard .navbar-upload-btn:disabled { background: transparent; border-color: var(--ws-line); color: var(--ws-dim); opacity: 1; }
+.dashboard .navbar-toggle-btn {
+  background: transparent;
+  border: 1px solid var(--ws-line);
+  color: var(--ws-muted);
+}
+.dashboard .navbar-toggle-btn:hover {
+  background: rgba(255, 255, 255, .05);
+  border-color: rgba(255, 255, 255, .2);
+  color: var(--ws-fg);
+  box-shadow: none;
+  transform: none;
+}
+.dashboard .navbar-upload-btn svg,
+.dashboard .navbar-toggle-btn svg { width: 15px; height: 15px; }
+
+/* ---------- account ---------- */
+.dashboard .account-summary { padding-left: 12px; border-left: 1px solid var(--ws-line-soft); }
+.dashboard .account-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--ws-fg);
+  color: #0a0a0c;
+  font-size: 11px;
+  font-weight: 700;
+}
+.dashboard .account-copy strong { color: #d2d2d8; font-size: 11px; font-weight: 550; }
+.dashboard .account-copy small { color: var(--ws-dim); font-size: 9.5px; }
+.dashboard .logout-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ws-line);
+  border-radius: 9px;
+  color: var(--ws-muted);
+  background: transparent;
+}
+.dashboard .logout-btn:hover {
+  color: var(--ws-fg);
+  background: rgba(255, 255, 255, .05);
+  border-color: rgba(255, 255, 255, .2);
+}
+
+/* ---------- sources panel ---------- */
+.dashboard .main-app-container,
+.dashboard .main-content,
+.dashboard .dashboard-main { background: var(--ws-ink); }
+.dashboard .sources-panel { width: 318px; background: var(--ws-panel); border-right: 1px solid var(--ws-line-soft); }
+.dashboard .sources-header { padding: 18px 16px 14px; border-bottom: 1px solid var(--ws-line-soft); }
+.dashboard .sources-title { font-size: 12.5px; font-weight: 600; letter-spacing: -.015em; color: var(--ws-fg); }
+.dashboard .limit-counter { color: var(--ws-dim); font-size: 9.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.dashboard .limit-message { color: var(--ws-dim); font-size: 10px; font-style: normal; }
+.dashboard .clear-all-btn {
+  margin-left: 10px;
+  padding: 5px 10px;
+  border: 1px solid var(--ws-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ws-muted);
+  font-size: 10.5px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.dashboard .clear-all-btn:hover {
+  color: var(--ws-danger);
+  border-color: rgba(232, 112, 122, .35);
+  background: rgba(232, 112, 122, .07);
+  transform: none;
+  box-shadow: none;
+}
+
+/* source type pickers */
+.dashboard .source-types { padding: 14px 14px 8px; gap: 6px; }
+.dashboard .source-type-box {
+  padding: 11px;
+  border: 1px solid var(--ws-line-soft);
+  border-radius: 10px;
+  background: transparent;
+}
+.dashboard .source-type-box:hover {
+  background: rgba(255, 255, 255, .04);
+  border-color: rgba(255, 255, 255, .16);
+  box-shadow: none;
+  transform: none;
+}
+.dashboard .source-type-icon {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ws-line-soft);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ws-muted);
+}
+.dashboard .source-type-icon svg { width: 15px; height: 15px; }
+.dashboard .source-type-content h4 { color: #dededf; font-size: 11.5px; font-weight: 550; }
+.dashboard .source-type-content p { color: var(--ws-dim); font-size: 10px; }
+
+/* uploaded sources */
+.dashboard .sources-list { padding: 6px 14px 16px; }
+.dashboard .source-item {
+  padding: 10px;
+  margin-bottom: 5px;
+  border: 1px solid var(--ws-line-soft);
+  border-radius: 9px;
+  background: transparent;
+}
+.dashboard .source-item:hover { background: rgba(255, 255, 255, .04); border-color: rgba(255, 255, 255, .16); }
+.dashboard .source-icon {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ws-line-soft);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ws-muted);
+}
+.dashboard .source-icon svg { width: 14px; height: 14px; }
+.dashboard .source-name { color: #d6d6db; font-size: 11px; font-weight: 550; }
+.dashboard .source-type { color: var(--ws-dim); font-size: 9px; }
+.dashboard .delete-source-btn { color: var(--ws-dim); }
+.dashboard .delete-source-btn:hover { color: var(--ws-danger); background: rgba(232, 112, 122, .1); }
+
+/* empty state in the rail */
+.dashboard .sources-empty-icon { color: var(--ws-dim); opacity: 1; }
+.dashboard .sources-empty h3 { color: #d6d6db; font-size: 12.5px; font-weight: 600; }
+.dashboard .sources-empty p { color: var(--ws-dim); font-size: 11px; }
+
+/* ---------- chat ---------- */
+.dashboard .chat-context-bar { border-bottom: 1px solid var(--ws-line-soft); color: var(--ws-dim); }
+.dashboard .chat-context-bar > div { color: var(--ws-muted); }
+.dashboard .status-dot { background: #cfcfd6; box-shadow: 0 0 0 4px rgba(255, 255, 255, .06); }
+
+.dashboard .chat-welcome { max-width: 560px; }
+.dashboard .upload-icon {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 20px;
+  border: 1px solid var(--ws-line);
+  border-radius: 12px;
+  background: transparent;
+}
+.dashboard .upload-icon svg { width: 19px; height: 19px; color: var(--ws-muted); }
+.dashboard .upload-icon:hover { transform: none; box-shadow: none; }
+.dashboard .empty-kicker {
+  color: var(--ws-dim);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: .16em;
+}
+.dashboard .chat-welcome h2 { font-size: 26px; font-weight: 600; letter-spacing: -.035em; color: var(--ws-fg); }
+.dashboard .chat-welcome p { color: var(--ws-muted); font-size: 13px; line-height: 1.65; }
+
+.dashboard .prompt-suggestions button {
+  padding: 11px 13px;
+  border: 1px solid var(--ws-line-soft);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ws-muted);
+  font-size: 11.5px;
+}
+.dashboard .prompt-suggestions button:hover {
+  background: rgba(255, 255, 255, .05);
+  border-color: rgba(255, 255, 255, .18);
+  color: var(--ws-fg);
+}
+
+/* messages */
+.dashboard .message-author { color: var(--ws-dim); font-size: 9px; }
+.dashboard .message-content { border-radius: 12px; font-size: 13px; line-height: 1.68; }
+.dashboard .message-user .message-content {
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid var(--ws-line);
+  color: #eeeef1;
+  box-shadow: none;
+}
+.dashboard .message-assistant .message-content {
+  background: var(--ws-panel);
+  border: 1px solid var(--ws-line-soft);
+  color: #c2c2c9;
+}
+
+/* composer */
+.dashboard .chat-input-container {
+  padding: 16px 24px 20px;
+  background: linear-gradient(to top, var(--ws-ink) 72%, rgba(8, 8, 10, .82));
+  border-top: 1px solid var(--ws-line-soft);
+}
+.dashboard .chat-input {
+  border: 1px solid var(--ws-line);
+  border-radius: 13px;
+  background: var(--ws-panel);
+  color: var(--ws-fg);
+  font-size: 13px;
+}
+.dashboard .chat-input:focus {
+  border-color: rgba(255, 255, 255, .3);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, .05);
+}
+.dashboard .chat-input::placeholder { color: var(--ws-dim); }
+.dashboard .sources-count { color: var(--ws-dim); font-size: 9px; }
+.dashboard .send-btn {
+  width: 33px;
+  height: 33px;
+  border-radius: 9px;
+  background: var(--ws-fg);
+  color: #0a0a0c;
+  box-shadow: none;
+}
+.dashboard .send-btn svg { color: #0a0a0c; }
+.dashboard .send-btn:hover { background: #fff; transform: translateY(-50%); box-shadow: none; }
+.dashboard .send-btn:disabled { background: var(--ws-raised); color: var(--ws-dim); }
+.dashboard .send-btn:disabled svg { color: var(--ws-dim); }
+
+/* ---------- loading ---------- */
+.dashboard .loading-spinner { border-color: var(--ws-line); border-top-color: var(--ws-fg); }
+.dashboard .loading-overlay { background: rgba(8, 8, 10, .72); }
+
+/* ---------- modals ---------- */
+.dashboard .modal-content,
+.dashboard .mobile-modal-content {
+  border: 1px solid var(--ws-line);
+  border-radius: 16px;
+  background: var(--ws-panel);
+}
+.dashboard .modal-header,
+.dashboard .mobile-modal-header { border-bottom: 1px solid var(--ws-line-soft); }
+.dashboard .modal-footer,
+.dashboard .mobile-modal-footer { border-top: 1px solid var(--ws-line-soft); }
+.dashboard .btn-primary,
+.dashboard .mobile-btn-primary {
+  background: var(--ws-fg);
+  border: 1px solid var(--ws-fg);
+  color: #0a0a0c;
+  box-shadow: none;
+}
+.dashboard .btn-primary:hover,
+.dashboard .mobile-btn-primary:hover { background: #fff; box-shadow: none; }
+
+/* ---------- rail section labels ---------- */
+.dashboard .rail-label {
+  padding: 16px 16px 8px;
+  color: var(--ws-dim);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.dashboard .rail-label-tight { padding: 6px 2px 9px; }
+.dashboard .source-types { padding-top: 0; }
+
+/* ---------- narrow screens ---------- */
+@media (max-width: 700px) {
+  /*
+   * Dashboard.css tries to hide these under 640px, but a later
+   * `.user-info { display: block }` rule of equal specificity overrides the
+   * media query, so the header overflowed its viewport. Re-assert it here.
+   */
+  .dashboard .user-info { display: none; }
+
+  .dashboard .dashboard-header-content { padding: 0 12px; gap: 10px; }
+  .dashboard .dashboard-title { min-width: 0; }
+  .dashboard .dashboard-title h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dashboard .dashboard-actions { gap: 6px; flex-shrink: 0; }
+  .dashboard .navbar-upload-btn,
+  .dashboard .navbar-toggle-btn { padding: 7px 11px; white-space: nowrap; }
+  .dashboard .account-summary { padding-left: 8px; }
+  .dashboard .logout-btn { width: 30px; height: 30px; }
+}
+
+@media (max-width: 420px) {
+  /* at this width the labelled buttons cannot coexist with the account block */
+  .dashboard .btn-label { display: none; }
+  .dashboard .brand-mark { width: 20px; height: 20px; }
+}
+
+/* ---------- mobile sources sheet ---------- */
+.dashboard .mobile-modal-header { padding: 18px 16px; background: transparent; }
+.dashboard .mobile-modal-header h3 { font-size: 14px; font-weight: 600; letter-spacing: -.02em; color: var(--ws-fg); }
+.dashboard .mobile-modal-close { color: var(--ws-muted); }
+.dashboard .mobile-sources-list { margin: 8px 0; padding: 0 16px; }
+.dashboard .mobile-source-item {
+  padding: 11px;
+  margin: 0 0 6px;
+  border: 1px solid var(--ws-line-soft);
+  border-radius: 9px;
+  background: transparent;
+}
+.dashboard .mobile-source-name { color: #d6d6db; font-size: 12.5px; font-weight: 550; margin-bottom: 5px; word-break: break-word; }
+.dashboard .mobile-source-type {
+  color: var(--ws-dim);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: .1em;
+  margin-bottom: 3px;
+}
+.dashboard .mobile-source-date { color: var(--ws-dim); font-size: 10px; }
+.dashboard .mobile-source-delete {
+  flex: none;
+  border: 1px solid var(--ws-line-soft);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ws-dim);
+}
+.dashboard .mobile-source-delete:hover {
+  color: var(--ws-danger);
+  background: rgba(232, 112, 122, .1);
+  border-color: rgba(232, 112, 122, .35);
+}
+.dashboard .mobile-modal-footer { padding: 14px 16px 18px; gap: 8px; }
+.dashboard .mobile-btn {
+  padding: 9px 16px;
+  border: 1px solid var(--ws-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ws-muted);
+  font-size: 12.5px;
+  font-weight: 500;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+.dashboard .mobile-btn:hover {
+  background: rgba(255, 255, 255, .05);
+  border-color: rgba(255, 255, 255, .2);
+  color: var(--ws-fg);
+  box-shadow: none;
+  transform: none;
+}
+.dashboard .mobile-btn-primary:hover { transform: none; }
+
+/* declared after .mobile-btn so the primary variant keeps its solid fill */
+.dashboard .mobile-btn-primary {
+  background: var(--ws-fg);
+  border-color: var(--ws-fg);
+  color: #0a0a0c;
+}
+.dashboard .mobile-btn-primary:hover { background: #fff; border-color: #fff; color: #0a0a0c; }
+.dashboard .mobile-btn-primary:disabled { background: transparent; border-color: var(--ws-line); color: var(--ws-dim); }

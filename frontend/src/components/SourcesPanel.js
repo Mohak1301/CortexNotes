@@ -177,7 +177,7 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading, onSourceDeleted, onSou
     <div className="sources-panel">
       <div className="sources-header">
         <div className="sources-title-section">
-          <h2 className="sources-title">Add Your Resources Below</h2>
+          <h2 className="sources-title">Sources</h2>
           <div className="document-limit">
             <span className="limit-counter">
               {currentCount}/{maxDocuments} documents
@@ -194,7 +194,7 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading, onSourceDeleted, onSou
             disabled={isDeleting}
             title="Clear all sources and embeddings"
           >
-            {isDeleting ? 'Clearing...' : 'Clear All'}
+            {isDeleting ? 'Clearing…' : 'Clear all'}
           </button>
         )}
       </div>
@@ -209,6 +209,7 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading, onSourceDeleted, onSou
       />
 
       {/* Source Type Selection */}
+      <div className="rail-label">Add a source</div>
       <div className="source-types">
         <button
           type="button"
@@ -297,6 +298,7 @@ const SourcesPanel = ({ sources, onFileUpload, isLoading, onSourceDeleted, onSou
         </div>
       ) : (
         <div className="sources-list">
+          <div className="rail-label rail-label-tight">In this workspace</div>
           {sources.map((source) => (
             <div key={source.id} className="source-item">
               <div className="source-icon">
