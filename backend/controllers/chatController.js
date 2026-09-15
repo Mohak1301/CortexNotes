@@ -10,6 +10,15 @@ import { buildChatCompletionRequest } from '../services/chatCompletion.js';
 const client = new OpenAI();
 
 const SNIPPET_LIMIT = 200;
+const CITATION_MARKER = /\[(\d+)\]/g;
+
+// Retrieval always returns k chunks, even for "hey", so the sources sent up front are
+// only what was searched. The markers say what was actually used.
+export const citedNumbers = (answer) => {
+  const found = new Set();
+  for (const match of answer.matchAll(CITATION_MARKER)) found.add(Number(match[1]));
+  return [...found];
+};
 
 // One numbering shared by the model and the browser, so [2] means the same thing to both.
 export const buildCitations = (docs) => docs.map((doc, index) => {
@@ -429,6 +438,11 @@ export const chat = async (req, res, next) => {
       }
     }
 
+    // Lets the client drop chips the answer never leaned on. An answer with no
+    // markers cited nothing, and its sources disappear.
+    const cited = citedNumbers(answer);
+    res.write(`data: ${JSON.stringify({ cited })}\n\n`);
+
     if (answer && conversation) {
       try {
         await appendMessage(req.accessToken, {
@@ -436,7 +450,7 @@ export const chat = async (req, res, next) => {
           userId: req.workspaceId,
           role: 'assistant',
           content: answer,
-          sources: toClientSources(citations),
+          sources: toClientSources(citations).filter((source) => cited.includes(source.n)),
         });
       } catch (error) {
         // It's already on screen. Failing now would replace a real answer with an error.

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rateLimit } from '../middleware/security.js';
+import { errorHandler, rateLimit } from '../middleware/security.js';
 
 const run = (middleware, req) => {
   const res = {
@@ -59,4 +59,34 @@ test('a subject returning null skips the limit entirely', () => {
   assert.ok(run(demoOnly, caller({ workspaceId: 'real-user' })).passed);
   assert.ok(run(demoOnly, caller({ workspaceId: 'real-user' })).passed);
   assert.ok(run(demoOnly, caller({ workspaceId: 'real-user' })).passed);
+});
+
+test('an error we raised keeps the message we wrote', () => {
+  const sent = {};
+  const res = {
+    status(code) { sent.status = code; return this; },
+    json(body) { sent.body = body; return this; },
+  };
+  const req = { requestId: 'r' };
+
+  // A 503 we raise on purpose, like the demo being switched off. Replacing this with
+  // a generic string leaves the reader with nothing to act on.
+  errorHandler(Object.assign(new Error('The demo is not available right now'), { status: 503 }), req, res, () => {});
+
+  assert.equal(sent.status, 503);
+  assert.equal(sent.body.error, 'The demo is not available right now');
+});
+
+test('an unexpected crash says nothing about itself', () => {
+  const sent = {};
+  const res = {
+    status(code) { sent.status = code; return this; },
+    json(body) { sent.body = body; return this; },
+  };
+
+  errorHandler(new TypeError('cannot read property secretKey of undefined'), { requestId: 'r' }, res, () => {});
+
+  assert.equal(sent.status, 500);
+  assert.equal(sent.body.error, 'The server could not complete the request');
+  assert.ok(!sent.body.error.includes('secretKey'), 'internals must not reach the browser');
 });

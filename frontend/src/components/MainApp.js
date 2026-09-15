@@ -171,6 +171,14 @@ function MainApp({
             setIsChatLoading(false);
             return;
           }
+          if (event.cited) {
+            // Sources shown while the answer was still writing, but never referred
+            // to, would be claiming the answer came from somewhere it did not.
+            updateAssistant((item) => ({
+              sources: item.sources.filter((source) => event.cited.includes(source.n)),
+            }));
+            return;
+          }
           if (event.delta) {
             updateAssistant(item => ({ content: item.content + event.delta }));
             setIsChatLoading(false);

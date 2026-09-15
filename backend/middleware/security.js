@@ -68,15 +68,17 @@ export const notFound = (req, res) => {
 
 export const errorHandler = (error, req, res, _next) => {
   const status = error.status || error.statusCode || (error.name === 'MulterError' ? 400 : 500);
-  const expected = status >= 400 && status < 500;
-  if (!expected) console.error(`[${req.requestId}]`, error);
 
-  const message = expected ? error.message : 'The server could not complete the request';
+  // A status we set means we wrote the message too, so it is safe to send. Anything
+  // without one is a crash, and its message could name internals.
+  const deliberate = Boolean(error.status || error.statusCode || error.name === 'MulterError');
 
-  // Our own errors can share their code; unexpected ones keep it quiet.
+  // Crashes always, and deliberate outages too: a 503 is worth knowing about.
+  if (!deliberate || status >= 500) console.error(`[${req.requestId}]`, deliberate ? error.message : error);
+
   res.status(status).json({
-    error: message,
-    ...(expected && error.code ? { code: error.code } : {}),
+    error: deliberate ? error.message : 'The server could not complete the request',
+    ...(deliberate && error.code ? { code: error.code } : {}),
     requestId: req.requestId,
   });
 };

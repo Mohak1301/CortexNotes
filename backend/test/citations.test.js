@@ -69,3 +69,16 @@ test('page number is absent for sources that have no pages', () => {
   assert.equal(pdf.page, 7);
   assert.equal(url.page, undefined);
 });
+
+test('only the sources an answer actually cites survive', async () => {
+  const { citedNumbers } = await import('../controllers/chatController.js');
+
+  // The case that started this: retrieval returns k chunks for any input, so "hey"
+  // arrived with three sources attached and an answer that used none of them.
+  assert.deepEqual(citedNumbers('Hello! How can I assist you today?'), []);
+
+  assert.deepEqual(citedNumbers('It finds nearest neighbours [1] and ranks them [3].'), [1, 3]);
+  // One source backing two sentences is still one chip.
+  assert.deepEqual(citedNumbers('First point [2]. Second point [2].'), [2]);
+  assert.deepEqual(citedNumbers('Both apply here [1][2].'), [1, 2]);
+});
