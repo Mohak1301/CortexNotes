@@ -9,6 +9,7 @@ import {
   requestContext,
 } from './middleware/security.js';
 import { requireAuth, requireCsrf } from './middleware/auth.js';
+import { demoRateSubject } from './middleware/demo.js';
 
 // Import routes
 import chatRoutes from "./routes/chatRoutes.js";
@@ -60,6 +61,9 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api', requireAuth);
 app.use('/api', requireCsrf);
+// Runs before any limiter so demo visitors are counted individually rather than as
+// one very busy account.
+app.use('/api', demoRateSubject);
 app.use('/api', rateLimit({ limit: config.generalRateLimit, name: 'general' }));
 app.use("/api", chatRoutes);
 app.use("/api", uploadRoutes);

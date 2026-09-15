@@ -45,6 +45,10 @@ export const config = Object.freeze({
   rateLimitWindowMs: getInteger('RATE_LIMIT_WINDOW_MS', 60_000, { min: 1_000 }),
   generalRateLimit: getInteger('RATE_LIMIT_MAX', 120),
   expensiveRateLimit: getInteger('EXPENSIVE_RATE_LIMIT_MAX', 12),
+  // Across every demo visitor at once. Each demo chat spends real OpenAI credit on
+  // an account nobody has to sign up for, so the bill needs an upper bound that a
+  // per-visitor limit cannot give it.
+  demoChatCeiling: getInteger('DEMO_CHAT_CEILING', 60),
   trustProxy: process.env.TRUST_PROXY === 'true' ? 1 : false,
 });
 

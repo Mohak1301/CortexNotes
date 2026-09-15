@@ -10,15 +10,32 @@ export const requestContext = (req, res, next) => {
   next();
 };
 
-export const rateLimit = ({ limit, windowMs = config.rateLimitWindowMs, name = 'api' }) => (
+// `subject` turns this into a single shared bucket, for a ceiling that applies to a
+// whole class of traffic rather than to one caller. Returning null from it skips the
+// limit for that request.
+export const rateLimit = ({ limit, windowMs = config.rateLimitWindowMs, name = 'api', subject }) => (
   req,
   res,
   next,
 ) => {
   const now = Date.now();
-  // Enforce both network and workspace buckets so rotating a client ID cannot bypass limits.
-  const keys = [`${name}:ip:${req.ip}`];
-  if (req.workspaceId) keys.push(`${name}:workspace:${req.workspaceId}`);
+
+  let keys;
+  if (subject) {
+    const value = subject(req);
+    if (!value) return next();
+    keys = [`${name}:${value}`];
+  } else if (req.rateLimitSubject) {
+    // Demo visitors arrive through a proxy, so req.ip is that proxy for all of them
+    // and counting it would make one person's questions exhaust everyone else's.
+    // The address carries no information here, so the session stands alone and the
+    // global ceiling covers what it cannot.
+    keys = [`${name}:owner:${req.rateLimitSubject}`];
+  } else {
+    // Enforce both network and workspace buckets so rotating a client ID cannot bypass limits.
+    keys = [`${name}:ip:${req.ip}`];
+    if (req.workspaceId) keys.push(`${name}:owner:${req.workspaceId}`);
+  }
   const activeBuckets = keys.map((key) => {
     let bucket = buckets.get(key);
     if (!bucket || bucket.resetAt <= now) bucket = { count: 0, resetAt: now + windowMs };
