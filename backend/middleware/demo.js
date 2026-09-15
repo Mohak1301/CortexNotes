@@ -1,9 +1,7 @@
 import crypto from 'crypto';
 import { config } from '../config.js';
 
-// The demo account is shared by every visitor, so it has to be read only. Without
-// this, one person deleting the sample documents breaks the demo for everyone after
-// them, and there is no way to tell who did it.
+// Everyone shares the demo login, so one person could wipe it for the rest.
 export const isDemoUser = (req) => Boolean(
   config.demoEmail
   && req.user?.email
@@ -20,14 +18,8 @@ export const blockDemoWrites = (req, res, next) => {
   });
 };
 
-// Every demo visitor signs into the same account and arrives through the same
-// proxy, so bucketing rate limits by workspace or address puts them all together:
-// four people chatting at once exhausts the allowance and the fifth is told to
-// slow down. Their access token is the only thing that differs, so it stands in
-// for an identity here.
-//
-// It is a weak one - clearing cookies earns a fresh bucket - which is why the
-// ceiling over all demo chats exists alongside it.
+// Demo visitors share an account and a proxy, so only the token tells them apart.
+// Clearing cookies gets a fresh bucket, which is what the global ceiling is for.
 export const demoRateSubject = (req, _res, next) => {
   if (isDemoUser(req) && req.accessToken) {
     req.rateLimitSubject = `demo:${crypto.createHash('sha256').update(req.accessToken).digest('base64url').slice(0, 22)}`;

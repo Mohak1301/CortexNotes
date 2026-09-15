@@ -17,9 +17,8 @@ export const requireAuth = async (req, res, next) => {
       return res.status(401).json({ error: 'Authentication required', requestId: req.requestId });
     }
 
-    // Supabase is a network hop away, so skip it when this token was checked
-    // moments ago. Logout clears the entry, so a signed-out token stops working
-    // immediately rather than lingering for the cache lifetime.
+    // Skip the Supabase hop if this token was checked moments ago. Logout clears
+    // the entry, so a signed-out token stops working right away.
     const cached = getCachedUser(accessToken);
     if (cached) {
       req.accessToken = accessToken;

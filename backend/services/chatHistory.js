@@ -3,9 +3,8 @@ import { config } from '../config.js';
 
 const REST_TIMEOUT_MS = 10_000;
 
-// PostgREST exposes the tables over HTTP. Every request carries the caller's own
-// access token, so row level security decides which rows come back. Nothing in this
-// file filters by user, which means nothing in this file can forget to.
+// Requests carry the user's own token, so the database decides what comes back.
+// Nothing here filters by user, so nothing here can forget to.
 const restRequest = async (path, { method = 'GET', accessToken, body, prefer } = {}) => {
   if (!config.supabaseUrl || !config.supabasePublishableKey) {
     throw Object.assign(new Error('Chat history is not configured'), { status: 503 });
@@ -29,8 +28,7 @@ const restRequest = async (path, { method = 'GET', accessToken, body, prefer } =
     const data = response.status === 204 ? null : await response.json().catch(() => null);
 
     if (!response.ok) {
-      // Postgres error text can name columns and constraints, so it stays in the
-      // log rather than going back to the browser.
+      // Postgres errors name columns and constraints, so keep them in the log.
       console.warn(`[history] ${method} ${path} -> ${response.status} ${data?.code || ''}`);
       throw Object.assign(
         new Error('Chat history is unavailable right now'),
@@ -51,8 +49,7 @@ const restRequest = async (path, { method = 'GET', accessToken, body, prefer } =
 
 const TITLE_LIMIT = 60;
 
-// A first message is a good enough title and costs nothing. An LLM-written title
-// would be nicer and would add a second model call to every new conversation.
+// Good enough, and free. An LLM title would cost a call per conversation.
 export const titleFromMessage = (message) => {
   const collapsed = message.replace(/\s+/g, ' ').trim();
   if (collapsed.length === 0) return 'New chat';
@@ -71,7 +68,7 @@ export const createConversation = (accessToken, userId, title) => restRequest(
   {
     method: 'POST',
     accessToken,
-    // Without this header PostgREST returns an empty body on insert.
+    // Without this, inserts come back empty.
     prefer: 'return=representation',
     body: { user_id: userId, title },
   },

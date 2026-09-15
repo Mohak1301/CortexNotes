@@ -31,8 +31,7 @@ export const validateText = (text) => {
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Conversation ids are interpolated into PostgREST query strings, so anything that
-// is not a uuid is rejected before it can reach one.
+// Goes into a PostgREST query string, so reject anything that isn't a uuid.
 export const validateConversationId = (value) => {
   if (typeof value !== 'string' || !UUID_PATTERN.test(value)) {
     throw Object.assign(new Error('Unknown conversation'), { status: 400 });
@@ -43,9 +42,7 @@ export const validateConversationId = (value) => {
 const HISTORY_TURNS = 4;
 const HISTORY_CHARS = 400;
 
-// History arrives from the browser, so its size cannot be trusted: without a cap a
-// caller could push an arbitrarily large prompt through and spend the budget on it.
-// Older turns rarely help resolve a follow-up, so only the last few are kept.
+// Comes from the browser, so cap it. An uncapped history is a way to spend the budget.
 export const validateHistory = (raw) => {
   if (!Array.isArray(raw)) return [];
 

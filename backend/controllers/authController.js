@@ -105,9 +105,7 @@ export const login = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-// Signs the visitor into the shared demo account. The credentials live only on the
-// server, so the browser never learns them and the account cannot be reused outside
-// this endpoint.
+// The demo credentials stay on the server; the browser only gets a session.
 export const demoLogin = async (req, res, next) => {
   try {
     if (!config.demoEmail || !config.demoPassword) {
@@ -116,7 +114,7 @@ export const demoLogin = async (req, res, next) => {
 
     const result = await signIn(config.demoEmail, config.demoPassword);
     if (!result.ok || !result.data?.access_token || !result.data?.user) {
-      // The visitor cannot fix this, so it reads as an outage rather than a refusal.
+      // Nothing the visitor can fix, so report it as an outage.
       console.warn(`[${req.requestId}] demo sign-in failed: status=${result.status}`);
       throw Object.assign(new Error('The demo is not available right now'), { status: 503 });
     }
@@ -157,8 +155,7 @@ export const session = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-// The address the reset link returns to. Supabase only honours URLs on its own
-// redirect allow list, so this has to match what is configured there.
+// Must match Supabase's redirect allow list or it falls back to the Site URL.
 const appOrigin = () => config.frontendOrigins[0] || '';
 
 export const forgotPassword = async (req, res, next) => {
@@ -166,9 +163,7 @@ export const forgotPassword = async (req, res, next) => {
     const { email } = validateAuthInput({ ...req.body, password: 'placeholder-value' });
     const result = await requestPasswordReset(email, `${appOrigin()}/reset-password`);
 
-    // Supabase reports a refused send as a status, not an exception, so checking it
-    // is the only way this ever reaches a log. Returning the same answer to every
-    // caller must not also mean returning no answer to whoever runs the service.
+    // A refused send comes back as a status, not a throw, so it needs checking.
     if (!result.ok) {
       console.warn(
         `[${req.requestId}] Supabase recovery mail rejected: status=${result.status} `
@@ -181,14 +176,11 @@ export const forgotPassword = async (req, res, next) => {
     console.warn(`[${req.requestId}] password reset request failed: ${error.message}`);
   }
 
-  // Always the same response. Saying "no account with that email" would turn this
-  // endpoint into a way to test which addresses are registered.
+  // Same answer either way, or this becomes a way to test which emails exist.
   res.json({ message: 'If that address has an account, a reset link is on its way.' });
 };
 
-// The recovery link hands the browser a session in the URL fragment. This swaps it
-// for the same HttpOnly cookies every other sign-in uses, so the rest of the app
-// needs no special case for a user who arrived this way.
+// Swaps the session from the reset link for normal cookies.
 export const recoverSession = async (req, res, next) => {
   try {
     const accessToken = typeof req.body?.accessToken === 'string' ? req.body.accessToken : '';
@@ -197,7 +189,7 @@ export const recoverSession = async (req, res, next) => {
       throw Object.assign(new Error('That reset link is incomplete'), { status: 400 });
     }
 
-    // Never trust the token because it arrived: ask Supabase who it belongs to.
+    // Ask Supabase who this token belongs to before trusting it.
     const result = await getUser(accessToken);
     if (!result.ok || !result.data?.id) {
       throw Object.assign(
@@ -215,8 +207,7 @@ export const recoverSession = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-// Requires a signed-in session, which covers both a recovery link and a user
-// changing their password from inside the app.
+// Works for a reset link and for changing it from inside the app.
 export const changePassword = async (req, res, next) => {
   try {
     const { password } = validateAuthInput({
@@ -263,7 +254,7 @@ export const logout = async (req, res, next) => {
       if (refreshed.ok) accessToken = refreshed.data?.access_token;
     }
     if (accessToken) {
-      // Drop the cached lookup first so the token cannot survive this logout.
+      // Drop the cached lookup so the token dies with the session.
       clearCachedUser(accessToken);
       await signOut(accessToken);
     }

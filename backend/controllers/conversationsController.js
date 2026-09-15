@@ -32,10 +32,7 @@ export const show = async (req, res, next) => {
     const conversationId = validateConversationId(req.params.conversationId);
     const rows = await listMessages(req.accessToken, conversationId);
 
-    // Row level security returns an empty set for someone else's conversation, so a
-    // conversation that does not exist and one that belongs to another account look
-    // identical from here. That is also what stops this endpoint confirming that a
-    // given id is real.
+    // Someone else's conversation comes back empty, same as one that doesn't exist.
     res.json({ messages: (rows || []).map(toClientMessage) });
   } catch (error) { next(error); }
 };
@@ -44,7 +41,7 @@ export const destroy = async (req, res, next) => {
   try {
     const conversationId = validateConversationId(req.params.conversationId);
     await deleteConversation(req.accessToken, conversationId);
-    // Messages go with it through the cascade on the composite foreign key.
+    // Messages cascade with it.
     res.status(204).end();
   } catch (error) { next(error); }
 };

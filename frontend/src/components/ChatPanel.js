@@ -2,10 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 
 const CITATION_PATTERN = /\[(\d+)\]/g;
 
-// The answer streams in as plain text carrying [n] markers. Splitting on them lets
-// each marker become a control tied to its source while the prose stays untouched.
-// A marker with no matching source is left as literal text: the model can invent a
-// number, and inventing a chip for it would be worse than showing nothing.
+// Splits the [n] markers out of the streamed text. A marker with no matching source
+// stays as plain text, since the model can invent numbers.
 const renderAnswer = (content, sources = []) => {
   const parts = [];
   let cursor = 0;
@@ -36,15 +34,13 @@ const renderAnswer = (content, sources = []) => {
   return parts;
 };
 
-// A long filename in the middle of a question reads badly and wraps the button.
+// Long filenames wrap the button.
 const shorten = (name = '', limit = 34) => (
   name.length > limit ? `${name.slice(0, limit - 1)}…` : name
 );
 
-// Naming the actual documents beats a generic prompt: "Summarise report.pdf" tells
-// a first-time visitor what this thing does, where "Summarize the key ideas" could
-// be any chatbot. Built from the source list rather than asked of the model, so it
-// costs nothing and appears instantly.
+// "Summarise report.pdf" says more than "Summarize the key ideas". Built from the
+// source list, so it costs nothing.
 const buildSuggestions = (sources = []) => {
   if (sources.length === 0) {
     return [
@@ -65,9 +61,8 @@ const buildSuggestions = (sources = []) => {
     ];
   }
 
-  // Pasted text and web sources are named by date and host, so two of them can
-  // carry the same label. Asking someone to compare a document with itself reads
-  // as a bug, so that prompt only appears when the names actually differ.
+  // Text and web sources are named by date and host, so two can match. Comparing a
+  // document with itself reads as a bug.
   const secondName = shorten(second.name);
   const namesDiffer = secondName !== firstName;
 

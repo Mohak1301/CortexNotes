@@ -42,7 +42,7 @@ const HistoryPanel = ({
           key={conversation.id}
           className={`history-item ${conversation.id === activeId ? 'is-active' : ''}`}
         >
-          {/* The row is a button rather than a div so it is reachable by keyboard. */}
+          {/* A button, not a div, so it's reachable by keyboard. */}
           <button
             type="button"
             className="history-item-main"

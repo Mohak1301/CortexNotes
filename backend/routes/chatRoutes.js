@@ -9,7 +9,7 @@ const router = express.Router();
 router.post(
   "/chat",
   rateLimit({ limit: config.expensiveRateLimit, name: 'chat' }),
-  // And one ceiling over all of them together, so an open door is not an open wallet.
+  // And a ceiling over all demo chats, so an open door isn't an open wallet.
   rateLimit({
     limit: config.demoChatCeiling,
     name: 'demo-chat-total',

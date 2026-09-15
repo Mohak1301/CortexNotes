@@ -5,8 +5,8 @@ import { apiFetch, setCsrfToken } from '../utils/apiUtils.js';
 import PasswordField from './ui/PasswordField';
 import './AuthPage.css';
 
-// Supabase sends the recovery session in the URL fragment, which never reaches a
-// server. Reading it here is the one place this app handles a raw token.
+// The fragment never reaches a server, so only JS can read it. The one place this
+// app touches a raw token.
 const readRecoveryFragment = () => {
   const params = new URLSearchParams(window.location.hash.slice(1));
   const recovery = {
@@ -15,8 +15,7 @@ const readRecoveryFragment = () => {
     errorDescription: params.get('error_description') || '',
   };
 
-  // Wipe it straight away. A fragment holding a live session would otherwise stay
-  // in browser history, and in any screenshot or shared link.
+  // Wipe it, or a live session sits in history and in any screenshot.
   if (window.location.hash) {
     window.history.replaceState(null, '', window.location.pathname);
   }
@@ -35,8 +34,7 @@ const PasswordResetPage = ({ mode }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [linkState, setLinkState] = useState(isRequest ? 'n/a' : 'checking');
 
-  // Trade the fragment for ordinary cookies before showing the password field, so
-  // there is no point offering the form if the link is already dead.
+  // Trade it for cookies first; no point showing the form if the link is dead.
   useEffect(() => {
     if (isRequest) return;
 
@@ -113,7 +111,7 @@ const PasswordResetPage = ({ mode }) => {
         setError(data.error || 'That password could not be saved');
         return;
       }
-      // The recovery session is a real session, so there is nowhere else to send them.
+      // A recovery session is a real one, so they're already signed in.
       navigate('/dashboard', { replace: true });
     } catch {
       setError('Could not reach the service. Please try again.');

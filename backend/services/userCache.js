@@ -5,7 +5,7 @@ const MAX_ENTRIES = 5_000;
 
 const entries = new Map();
 
-// Tokens are bearer credentials, so keep a digest rather than the token itself.
+// Store a digest, not the token itself.
 const keyFor = (accessToken) => crypto.createHash('sha256').update(accessToken).digest('base64');
 
 export const getCachedUser = (accessToken) => {
@@ -25,7 +25,7 @@ export const setCachedUser = (accessToken, user) => {
     for (const [key, entry] of entries) {
       if (entry.expiresAt <= now) entries.delete(key);
     }
-    // Still full after pruning expired entries: drop the oldest insertion.
+    // Still full after pruning, so drop the oldest.
     if (entries.size >= MAX_ENTRIES) entries.delete(entries.keys().next().value);
   }
   entries.set(keyFor(accessToken), { user, expiresAt: Date.now() + TTL_MS });

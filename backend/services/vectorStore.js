@@ -13,9 +13,7 @@ const connection = {
 
 let storePromise = null;
 
-// Looking up the collection and checking the payload indexes each cost a Qdrant
-// round trip. Both are process-wide facts, so pay for them once rather than on
-// every request.
+// The collection lookup and index check are two round trips. Do them once.
 export const getVectorStore = () => {
   if (!storePromise) {
     storePromise = (async () => {
@@ -24,7 +22,7 @@ export const getVectorStore = () => {
       await ensureVectorIndexes(store.client, collectionName);
       return store;
     })().catch((error) => {
-      // Drop the cached rejection so the next request can retry.
+      // Drop the failure so the next request retries.
       storePromise = null;
       throw error;
     });

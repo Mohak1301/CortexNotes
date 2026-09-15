@@ -10,9 +10,7 @@ export const requestContext = (req, res, next) => {
   next();
 };
 
-// `subject` turns this into a single shared bucket, for a ceiling that applies to a
-// whole class of traffic rather than to one caller. Returning null from it skips the
-// limit for that request.
+// `subject` makes one shared bucket instead of per-caller. Return null to skip.
 export const rateLimit = ({ limit, windowMs = config.rateLimitWindowMs, name = 'api', subject }) => (
   req,
   res,
@@ -26,10 +24,7 @@ export const rateLimit = ({ limit, windowMs = config.rateLimitWindowMs, name = '
     if (!value) return next();
     keys = [`${name}:${value}`];
   } else if (req.rateLimitSubject) {
-    // Demo visitors arrive through a proxy, so req.ip is that proxy for all of them
-    // and counting it would make one person's questions exhaust everyone else's.
-    // The address carries no information here, so the session stands alone and the
-    // global ceiling covers what it cannot.
+    // req.ip is the proxy for every demo visitor, so counting it lumps them together.
     keys = [`${name}:owner:${req.rateLimitSubject}`];
   } else {
     // Enforce both network and workspace buckets so rotating a client ID cannot bypass limits.
@@ -78,9 +73,7 @@ export const errorHandler = (error, req, res, _next) => {
 
   const message = expected ? error.message : 'The server could not complete the request';
 
-  // Expected errors are ones this app threw itself, so their code is safe to pass
-  // on and lets the interface react - offering to resend a confirmation, say.
-  // Unexpected errors keep their code to themselves.
+  // Our own errors can share their code; unexpected ones keep it quiet.
   res.status(status).json({
     error: message,
     ...(expected && error.code ? { code: error.code } : {}),

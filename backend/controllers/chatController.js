@@ -11,18 +11,14 @@ const client = new OpenAI();
 
 const SNIPPET_LIMIT = 200;
 
-// Retrieval knows which chunk came from which file and page; generation does not.
-// Numbering the chunks here is the single shared key that lets the model refer back
-// to them as [1] or [2], and lets the browser map those markers to real documents.
+// One numbering shared by the model and the browser, so [2] means the same thing to both.
 export const buildCitations = (docs) => docs.map((doc, index) => {
   const metadata = doc.metadata || {};
   return {
     n: index + 1,
     sourceId: metadata.sourceId,
     type: metadata.documentType,
-    // sourceName is what every loader sets and what the sources panel displays, so
-    // it comes first. Without it, pasted text and web pages reached the model as
-    // "Untitled source" and it could not match them to what the reader had asked about.
+    // sourceName is what the sources panel shows, so the chips match it.
     label: metadata.sourceName
       || metadata.originalFilename
       || metadata.sourceUrl
@@ -32,9 +28,7 @@ export const buildCitations = (docs) => docs.map((doc, index) => {
   };
 });
 
-// The model needs the chunk text. Documents also carry the loader's full metadata,
-// including a `pdf` object of file info and page counts, which helps it not at all
-// and costs input tokens, so only these fields go into the prompt.
+// Documents carry a pile of loader metadata the model has no use for.
 export const toPromptContext = (citations) => citations.map(({ n, label, page, content }) => ({
   n,
   label,
@@ -42,7 +36,7 @@ export const toPromptContext = (citations) => citations.map(({ n, label, page, c
   content,
 }));
 
-// The browser needs enough to render a chip and a hover preview, not the full chunk.
+// Enough for a chip and a hover, not the whole chunk.
 export const toClientSources = (citations) => citations.map(({ n, sourceId, type, label, page, content }) => ({
   n,
   sourceId,
@@ -53,20 +47,16 @@ export const toClientSources = (citations) => citations.map(({ n, sourceId, type
 }));
 
 export const chat = async (req, res, next) => {
-  // Once the first byte is written the status code is locked, so errors after
-  // that point have to be reported inside the stream instead of as a status.
+  // After the first byte the status is fixed, so later errors go in the stream.
   let streaming = false;
   try {
   const message = validateChatMessage(req.body?.message);
   const history = validateHistory(req.body?.history);
 
-  // Every visitor shares the demo account, so saving their chats would show each
-  // person the last stranger's questions. The demo talks and forgets.
+  // Demo visitors share an account, so saving chats would show them each other's.
   const ephemeral = isDemoUser(req);
 
-  // A request with no conversation starts one. Both this and the user message are
-  // written before any streaming begins: if storage is down, the caller gets a
-  // clean error instead of an answer that was never saved.
+  // Saved before streaming starts, so a storage failure is a clean error.
   const conversation = ephemeral
     ? null
     : req.body?.conversationId
@@ -82,7 +72,7 @@ export const chat = async (req, res, next) => {
     });
   }
 
-  // Built once per process, so this costs no round trip after the first request.
+  // Built once per process.
   const vectorStore = await getVectorStore();
 
   const vectorSearcher = vectorStore.asRetriever({
@@ -95,9 +85,8 @@ export const chat = async (req, res, next) => {
     },
   });
 
-  // A follow-up like "what about that?" embeds to nothing useful. This turns it
-  // back into a question that can stand alone, and returns the original untouched
-  // when there is nothing to resolve - which is most of the time, and free.
+  // "what about that?" embeds to nothing useful. Returns the original if there's
+  // nothing to resolve, which is most of the time.
   const searchQuery = await resolveSearchQuery(client, message, history);
 
   // Get all relevant chunks first
@@ -394,9 +383,7 @@ export const chat = async (req, res, next) => {
 
 `;
 
-  // Retrieval can now find the right passage for a follow-up, but the model still
-  // has to know what "that" referred to in order to answer it, so the recent turns
-  // go in alongside the question.
+  // The model needs the recent turns too, or it can't tell what "that" meant.
   const messages = [
     { role: "system", content: systemPrompt },
     ...history,
@@ -405,7 +392,7 @@ export const chat = async (req, res, next) => {
 
     const { body, options } = buildChatCompletionRequest(messages);
 
-    // Stop paying OpenAI for tokens nobody will read if the browser goes away.
+    // Stop generating if the reader leaves.
     const abort = new AbortController();
     req.on('close', () => abort.abort());
 
@@ -417,27 +404,22 @@ export const chat = async (req, res, next) => {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream; charset=utf-8',
       Connection: 'keep-alive',
-      // Reverse proxies buffer by default, which would undo the streaming.
+      // Proxies buffer by default, which would undo the streaming.
       'X-Accel-Buffering': 'no',
     });
     streaming = true;
 
-    // A brand new conversation has an id the caller has never seen, and it needs it
-    // to send the next message into the same thread. An ephemeral chat has no id to
-    // send, and the client keeps it in memory instead.
+    // The client needs this id to send the next message into the same thread.
     if (conversation) {
       res.write(`data: ${JSON.stringify({
         conversation: { id: conversation.id, title: conversation.title },
       })}\n\n`);
     }
 
-    // Retrieval finished before generation began, so the sources are already known.
-    // Sending them first lets the interface show them while the model is still writing.
+    // Known before the first token, so the chips can render while it writes.
     res.write(`data: ${JSON.stringify({ sources: toClientSources(citations) })}\n\n`);
 
-    // The answer only exists in full once the stream ends, so it is collected here
-    // and written once. Saving each chunk instead would mean a database write per
-    // token for no benefit.
+    // Collected and written once. Saving each chunk is a write per token.
     let answer = '';
     for await (const part of stream) {
       const delta = part.choices?.[0]?.delta?.content;
@@ -457,9 +439,7 @@ export const chat = async (req, res, next) => {
           sources: toClientSources(citations),
         });
       } catch (error) {
-        // The answer is already on the reader's screen. Failing the response now
-        // would replace a delivered answer with an error, so this is logged and
-        // the reply stands - unsaved.
+        // It's already on screen. Failing now would replace a real answer with an error.
         console.warn(`[${req.requestId}] answer not persisted: ${error.message}`);
       }
     }

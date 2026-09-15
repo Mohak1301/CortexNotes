@@ -62,13 +62,11 @@ export const handleApiResponse = async (response) => {
   return { success: true };
 };
 
-// Reads a text/event-stream response and hands each parsed event to onEvent as it
-// lands, so the UI can render while the model is still writing. One handler rather
-// than one callback per event type: the transport stays dumb about what the events
-// mean, and a new event kind needs no change here.
+// Hands each streamed event to onEvent as it lands. One handler rather than one per
+// event type, so a new kind of event needs no change here.
 export const streamApi = async (endpoint, options, onEvent) => {
   const response = await apiFetch(endpoint, options);
-  // Errors arrive as normal JSON, so leave the body for the caller to read.
+  // Errors come back as normal JSON, so leave the body alone.
   if (!response.ok || !response.body) return response;
 
   const reader = response.body.getReader();
@@ -80,8 +78,7 @@ export const streamApi = async (endpoint, options, onEvent) => {
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
 
-    // Events are separated by a blank line. A trailing fragment means the last
-    // event is still arriving, so hold it back until the next read completes it.
+    // Blank line separates events. A trailing fragment is still arriving.
     const events = buffer.split('\n\n');
     buffer = events.pop() ?? '';
 

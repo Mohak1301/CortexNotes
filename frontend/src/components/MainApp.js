@@ -18,7 +18,7 @@ function MainApp({
   setShowSourcesPanel
 }) {
   const { user } = useAuth();
-  // Demo chats are never persisted, so a history rail would always be empty.
+  // Demo chats aren't saved, so the rail would always be empty.
   const isDemo = Boolean(user?.isDemo);
 
   const [messages, setMessages] = useState([]);
@@ -38,7 +38,7 @@ function MainApp({
       const data = await response.json();
       setConversations(data.conversations || []);
     } catch {
-      // The sidebar is not worth a toast: the chat itself still works without it.
+      // Not worth a toast; chat still works without the sidebar.
     } finally {
       setIsHistoryLoading(false);
     }
@@ -46,8 +46,7 @@ function MainApp({
 
   useEffect(() => { loadConversations(); }, [loadConversations]);
 
-  // Clearing every source starts a fresh thread. The stored conversations are
-  // untouched - only the open one is closed, so the view and the id stay in step.
+  // Clearing sources closes the open chat. Stored ones are untouched.
   useEffect(() => {
     if (sources.length === 0) {
       setMessages([]);
@@ -89,7 +88,7 @@ function MainApp({
         return;
       }
       setConversations((prev) => prev.filter((item) => item.id !== conversation.id));
-      // Only close the view if the deleted chat is the one on screen.
+      // Only clear the view if this was the open chat.
       setActiveConversationId((current) => {
         if (current !== conversation.id) return current;
         setMessages([]);
@@ -116,8 +115,7 @@ function MainApp({
     const assistantId = Date.now() + 1;
 
     try {
-      // Sources land before the first token, so whichever event arrives first
-      // creates the bubble and later events update it in place.
+      // Sources land before the first token, so either event may create the bubble.
       const updateAssistant = (update) => setMessages(prev => {
         const existing = prev.find(item => item.id === assistantId);
         if (!existing) {
@@ -141,26 +139,22 @@ function MainApp({
           method: 'POST',
           body: JSON.stringify({
             message,
-            // Lets the server resolve a follow-up like "what about that?" into a
-            // question that can be searched for. Sent from here rather than loaded
-            // on the server: it is already in memory, and demo chats are never
-            // stored, so there would be nothing to load for them.
+            // Lets the server resolve "what about that?" into something searchable.
+            // Sent from here because demo chats are never stored server side.
             history: messages.slice(-4).map((item) => ({
               role: item.type,
               content: item.content,
             })),
-            // Omitted on a new chat: the server creates the thread and tells us its id.
+            // Omitted on a new chat; the server sends back the new id.
             ...(activeConversationId ? { conversationId: activeConversationId } : {}),
           }),
         },
         (event) => {
           if (event.conversation) {
             setActiveConversationId(event.conversation.id);
-            // A new thread has to appear in the sidebar straight away, and an
-            // existing one moves to the top because the server just touched it.
+            // New threads appear at the top; existing ones move there.
             setConversations((prev) => {
-              // The server only sends a title for a thread it just created. For an
-              // existing one it sends null, so the title already on screen wins.
+              // Only new threads come with a title, so keep the one on screen.
               const existing = prev.find((item) => item.id === event.conversation.id);
               const without = prev.filter((item) => item.id !== event.conversation.id);
               return [{
@@ -173,8 +167,7 @@ function MainApp({
           }
           if (event.sources) {
             updateAssistant(() => ({ sources: event.sources }));
-            // The bubble is on screen now and carries its own pending state,
-            // so a second placeholder bubble would only duplicate it.
+            // The bubble has its own pending state, so drop the placeholder.
             setIsChatLoading(false);
             return;
           }

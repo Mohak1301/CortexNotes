@@ -15,8 +15,7 @@ const EyeOffIcon = () => (
 );
 
 const PasswordField = ({ label, hint, ...inputProps }) => {
-  // Deliberately not remembered between visits. A password left on screen because
-  // of a choice made last week is a worse surprise than clicking the eye again.
+  // Not remembered between visits.
   const [isVisible, setIsVisible] = useState(false);
 
   return (
@@ -25,16 +24,14 @@ const PasswordField = ({ label, hint, ...inputProps }) => {
       <span className="password-control">
         <input {...inputProps} type={isVisible ? 'text' : 'password'} />
         <button
-          // Without this it defaults to submit, and revealing the password would
-          // send the form.
+          // Otherwise it defaults to submit and sends the form.
           type="button"
           className="password-toggle"
           onClick={() => setIsVisible((current) => !current)}
-          // The label has to describe the action, not the state, or a screen reader
-          // announces "show password" while the password is already showing.
+          // Describes the action, not the state.
           aria-label={isVisible ? 'Hide password' : 'Show password'}
           aria-pressed={isVisible}
-          // Tabbing through a form should reach the next field, not this.
+          // Tab should reach the next field, not this.
           tabIndex={-1}
         >
           {isVisible ? <EyeOffIcon /> : <EyeIcon />}
