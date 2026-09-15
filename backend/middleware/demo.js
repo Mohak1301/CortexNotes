@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { config } from '../config.js';
 
 // The demo account is shared by every visitor, so it has to be read only. Without
@@ -17,4 +18,19 @@ export const blockDemoWrites = (req, res, next) => {
     code: 'demo_read_only',
     requestId: req.requestId,
   });
+};
+
+// Every demo visitor signs into the same account and arrives through the same
+// proxy, so bucketing rate limits by workspace or address puts them all together:
+// four people chatting at once exhausts the allowance and the fifth is told to
+// slow down. Their access token is the only thing that differs, so it stands in
+// for an identity here.
+//
+// It is a weak one - clearing cookies earns a fresh bucket - which is why the
+// ceiling over all demo chats exists alongside it.
+export const demoRateSubject = (req, _res, next) => {
+  if (isDemoUser(req) && req.accessToken) {
+    req.rateLimitSubject = `demo:${crypto.createHash('sha256').update(req.accessToken).digest('base64url').slice(0, 22)}`;
+  }
+  next();
 };
