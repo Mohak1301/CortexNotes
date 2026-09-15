@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { API_ENDPOINTS } from '../config/api.js';
 import { apiFetch } from '../utils/apiUtils.js';
+import PasswordField from './ui/PasswordField';
 import './AuthPage.css';
 
 const AuthPage = ({ mode }) => {
@@ -81,7 +82,17 @@ const AuthPage = ({ mode }) => {
             <form className="auth-form" onSubmit={submit}>
               {isRegister && <label>Full name<input name="name" value={form.name} onChange={update} autoComplete="name" minLength="2" maxLength="60" required /></label>}
               <label>Email address<input name="email" type="email" value={form.email} onChange={update} autoComplete="email" maxLength="254" required /></label>
-              <label>Password<input name="password" type="password" value={form.password} onChange={update} autoComplete={isRegister ? 'new-password' : 'current-password'} minLength="10" maxLength="128" required /><small>{isRegister ? 'Use at least 10 characters.' : ''}</small></label>
+              <PasswordField
+                label="Password"
+                hint={isRegister ? 'Use at least 10 characters.' : ''}
+                name="password"
+                value={form.password}
+                onChange={update}
+                autoComplete={isRegister ? 'new-password' : 'current-password'}
+                minLength="10"
+                maxLength="128"
+                required
+              />
               {error && <div className="auth-error" role="alert">{error}</div>}
               {needsConfirmation && (
                 resendNotice

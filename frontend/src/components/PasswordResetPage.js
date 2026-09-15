@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../config/api.js';
 import { apiFetch, setCsrfToken } from '../utils/apiUtils.js';
+import PasswordField from './ui/PasswordField';
 import './AuthPage.css';
 
 // Supabase sends the recovery session in the URL fragment, which never reaches a
@@ -185,19 +186,17 @@ const PasswordResetPage = ({ mode }) => {
             <h1 id="auth-title">Choose a new password.</h1>
             <p className="auth-intro">This replaces your old one immediately.</p>
             <form className="auth-form" onSubmit={savePassword}>
-              <label>New password
-                <input
-                  name="password"
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  autoComplete="new-password"
-                  minLength="10"
-                  maxLength="128"
-                  required
-                />
-                <small>Use at least 10 characters.</small>
-              </label>
+              <PasswordField
+                label="New password"
+                hint="Use at least 10 characters."
+                name="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                autoComplete="new-password"
+                minLength="10"
+                maxLength="128"
+                required
+              />
               {error && <div className="auth-error" role="alert">{error}</div>}
               <button className="auth-submit" disabled={isSubmitting}>
                 {isSubmitting ? 'Saving…' : 'Save password'}

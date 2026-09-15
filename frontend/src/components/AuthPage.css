@@ -185,3 +185,32 @@
   cursor: pointer;
 }
 .auth-inline-btn:hover { opacity: .8; }
+
+
+/* password field with reveal toggle */
+.password-label { display: block; }
+.password-control { position: relative; display: block; }
+/* Room for the button so a long password never runs underneath it. */
+.password-control input { width: 100%; padding-right: 42px; }
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: rgba(255, 255, 255, .45);
+  cursor: pointer;
+}
+.password-toggle:hover { color: rgba(255, 255, 255, .85); }
+.password-toggle:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, .6);
+  outline-offset: -1px;
+}
