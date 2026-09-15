@@ -1,6 +1,7 @@
 import { OpenAI } from "openai";
 import 'dotenv/config';
-import { validateChatMessage, validateConversationId } from '../utils/validation.js';
+import { validateChatMessage, validateConversationId, validateHistory } from '../utils/validation.js';
+import { resolveSearchQuery } from '../services/queryRewrite.js';
 import { getVectorStore } from '../services/vectorStore.js';
 import { appendMessage, createConversation, titleFromMessage } from '../services/chatHistory.js';
 import { isDemoUser } from '../middleware/demo.js';
@@ -57,6 +58,7 @@ export const chat = async (req, res, next) => {
   let streaming = false;
   try {
   const message = validateChatMessage(req.body?.message);
+  const history = validateHistory(req.body?.history);
 
   // Every visitor shares the demo account, so saving their chats would show each
   // person the last stranger's questions. The demo talks and forgets.
@@ -93,8 +95,13 @@ export const chat = async (req, res, next) => {
     },
   });
 
+  // A follow-up like "what about that?" embeds to nothing useful. This turns it
+  // back into a question that can stand alone, and returns the original untouched
+  // when there is nothing to resolve - which is most of the time, and free.
+  const searchQuery = await resolveSearchQuery(client, message, history);
+
   // Get all relevant chunks first
-  let allRelevantChunks = await vectorSearcher.invoke(message);
+  let allRelevantChunks = await vectorSearcher.invoke(searchQuery);
   
   // No user filtering needed since no authentication
   let relevantChunk = allRelevantChunks;
@@ -387,10 +394,13 @@ export const chat = async (req, res, next) => {
 
 `;
 
-  // Prepare messages for OpenAI (system prompt + current message only)
+  // Retrieval can now find the right passage for a follow-up, but the model still
+  // has to know what "that" referred to in order to answer it, so the recent turns
+  // go in alongside the question.
   const messages = [
     { role: "system", content: systemPrompt },
-    { role: "user", content: message }
+    ...history,
+    { role: "user", content: message },
   ];
 
     const { body, options } = buildChatCompletionRequest(messages);

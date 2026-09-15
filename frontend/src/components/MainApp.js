@@ -141,6 +141,14 @@ function MainApp({
           method: 'POST',
           body: JSON.stringify({
             message,
+            // Lets the server resolve a follow-up like "what about that?" into a
+            // question that can be searched for. Sent from here rather than loaded
+            // on the server: it is already in memory, and demo chats are never
+            // stored, so there would be nothing to load for them.
+            history: messages.slice(-4).map((item) => ({
+              role: item.type,
+              content: item.content,
+            })),
             // Omitted on a new chat: the server creates the thread and tells us its id.
             ...(activeConversationId ? { conversationId: activeConversationId } : {}),
           }),
@@ -186,7 +194,7 @@ function MainApp({
     } finally {
       setIsChatLoading(false);
     }
-  }, [activeConversationId]);
+  }, [activeConversationId, messages]);
   
   return (
     <div className={`main-app-container ${!showSourcesPanel ? 'chat-only' : ''}`}>

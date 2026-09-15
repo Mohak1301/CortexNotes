@@ -40,6 +40,29 @@ export const validateConversationId = (value) => {
   return value;
 };
 
+const HISTORY_TURNS = 4;
+const HISTORY_CHARS = 400;
+
+// History arrives from the browser, so its size cannot be trusted: without a cap a
+// caller could push an arbitrarily large prompt through and spend the budget on it.
+// Older turns rarely help resolve a follow-up, so only the last few are kept.
+export const validateHistory = (raw) => {
+  if (!Array.isArray(raw)) return [];
+
+  return raw
+    .filter((turn) => (
+      turn
+      && (turn.role === 'user' || turn.role === 'assistant')
+      && typeof turn.content === 'string'
+      && turn.content.trim()
+    ))
+    .slice(-HISTORY_TURNS)
+    .map((turn) => ({
+      role: turn.role,
+      content: turn.content.trim().slice(0, HISTORY_CHARS),
+    }));
+};
+
 export const validateChatMessage = (message) => {
   if (typeof message !== 'string' || !message.trim()) {
     throw Object.assign(new Error('Message is required'), { status: 400 });
